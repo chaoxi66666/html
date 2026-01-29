@@ -1,0 +1,1581 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>专家级URL分析系统</title>
+    <style>
+        body { 
+            font-family: 'Consolas', 'Monaco', monospace; 
+            margin: 20px; 
+            font-size: 13px;
+            background: #f8f9fa;
+        }
+        h1, h2 { 
+            margin: 15px 0 10px 0; 
+            color: #2c3e50;
+            border-bottom: 1px solid #dee2e6;
+            padding-bottom: 5px;
+        }
+        .tool-section { 
+            margin: 20px 0; 
+            padding: 15px; 
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        input, textarea, select { 
+            width: 100%; 
+            padding: 8px; 
+            border: 1px solid #ced4da; 
+            border-radius: 3px; 
+            font-family: inherit;
+            font-size: 13px;
+            margin: 5px 0;
+            background: #f8f9fa;
+        }
+        textarea { 
+            height: 100px; 
+            resize: vertical;
+        }
+        button { 
+            padding: 8px 15px; 
+            background: #3498db; 
+            color: white; 
+            border: none; 
+            border-radius: 3px; 
+            cursor: pointer; 
+            font-size: 13px;
+            margin: 5px 5px 5px 0;
+            transition: background 0.2s;
+        }
+        button:hover { background: #2980b9; }
+        .result { 
+            margin: 10px 0; 
+            padding: 12px; 
+            border: 1px solid #dee2e6; 
+            border-radius: 3px; 
+            background: white;
+            font-family: inherit;
+            white-space: pre-wrap;
+            word-break: break-all;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; }
+        .status-good { color: #27ae60; }
+        .status-warning { color: #f39c12; }
+        .status-bad { color: #e74c3c; }
+        .inline { display: inline-block; margin-right: 10px; }
+        .code { background: #2c3e50; color: #ecf0f1; padding: 3px 6px; border-radius: 3px; }
+        .tab { 
+            display: inline-block; 
+            padding: 8px 15px; 
+            cursor: pointer; 
+            border: 1px solid #dee2e6;
+            border-bottom: none;
+            background: #f8f9fa;
+            margin-right: -1px;
+        }
+        .tab.active { 
+            background: white; 
+            border-bottom: 1px solid white; 
+            margin-bottom: -1px;
+        }
+        .tab-content { 
+            display: none; 
+            padding: 15px; 
+            border: 1px solid #dee2e6; 
+            background: white;
+        }
+        .tab-content.active { display: block; }
+        .hex { font-family: monospace; color: #3498db; }
+        .param-row { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr 100px; 
+            gap: 10px; 
+            margin: 5px 0;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔗 专家级URL分析系统</h1>
+    <h2>开发者：River</h2>
+    
+    <div style="margin-bottom: 20px;">
+        <input type="text" id="masterUrl" placeholder="输入主URL (将用于多个工具)" 
+               value="https://user:pass@www.example.com:8080/path/to/page?q=测试&sort=desc#section" 
+               style="font-size: 14px; padding: 10px;">
+    </div>
+
+    <!-- 标签页导航 -->
+    <div style="margin-bottom: -1px;">
+        <div class="tab active" onclick="switchTab('security')">🔒 安全分析</div>
+        <div class="tab" onclick="switchTab('protocol')">📡 协议分析</div>
+        <div class="tab" onclick="switchTab('structure')">🏗️ 结构分析</div>
+        <div class="tab" onclick="switchTab('advanced')">⚡ 高级工具</div>
+    </div>
+
+    <!-- 安全分析标签页 -->
+    <div id="security-tab" class="tab-content active">
+        <div class="grid">
+            <!-- 工具1: URL注入检测 -->
+            <div class="tool-section">
+                <h2>🔍 URL注入检测</h2>
+                <textarea id="injectionUrl" placeholder="输入要检测的URL">https://example.com/page?redirect=https://evil.com&data=<script>alert(1)</script></textarea>
+                <button onclick="detectInjection()">检测注入</button>
+                <div class="result" id="injectionResult"></div>
+            </div>
+
+            <!-- 工具2: 同源策略分析 -->
+            <div class="tool-section">
+                <h2>🛡️ 同源策略分析</h2>
+                <div style="margin: 10px 0;">
+                    <div class="param-row">
+                        <input type="text" id="origin1" value="https://example.com" placeholder="源1">
+                        <input type="text" id="origin2" value="https://api.example.com" placeholder="源2">
+                        <button onclick="analyzeCORS()">分析</button>
+                    </div>
+                </div>
+                <div class="result" id="corsResult"></div>
+            </div>
+
+            <!-- 工具3: SSRF风险检测 -->
+            <div class="tool-section">
+                <h2>🎯 SSRF风险检测</h2>
+                <input type="text" id="ssrfUrl" value="https://api.internal/service" placeholder="内部URL">
+                <button onclick="detectSSRF()">检测SSRF风险</button>
+                <div class="result" id="ssrfResult"></div>
+            </div>
+
+            <!-- 工具4: URL混淆检测 -->
+            <div class="tool-section">
+                <h2>🎭 URL混淆检测</h2>
+                <input type="text" id="obfuscatedUrl" value="https://exämple.com@evil.com" placeholder="可疑URL">
+                <button onclick="detectObfuscation()">检测混淆</button>
+                <div class="result" id="obfuscationResult"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 协议分析标签页 -->
+    <div id="protocol-tab" class="tab-content">
+        <div class="grid">
+            <!-- 工具5: HTTP标头分析 -->
+            <div class="tool-section">
+                <h2>📋 HTTP标头模拟</h2>
+                <select id="headerMethod">
+                    <option>GET</option>
+                    <option>POST</option>
+                    <option>HEAD</option>
+                    <option>PUT</option>
+                    <option>DELETE</option>
+                </select>
+                <textarea id="customHeaders" placeholder="自定义标头 (每行一个 Header: Value)">User-Agent: ExpertURLTool/1.0
+Accept: application/json
+Cache-Control: no-cache</textarea>
+                <button onclick="simulateRequest()">模拟请求</button>
+                <div class="result" id="headersResult"></div>
+            </div>
+
+            <!-- 工具6: 协议升级分析 -->
+            <div class="tool-section">
+                <h2>🔄 协议升级分析</h2>
+                <input type="text" id="upgradeUrl" placeholder="输入URL">
+                <button onclick="analyzeUpgrade()">分析协议升级</button>
+                <div class="result" id="upgradeResult"></div>
+            </div>
+
+            <!-- 工具7: WebSocket URL分析 -->
+            <div class="tool-section">
+                <h2>⚡ WebSocket URL分析</h2>
+                <input type="text" id="wsUrl" value="wss://example.com/ws" placeholder="WebSocket URL">
+                <button onclick="analyzeWebSocket()">分析WebSocket</button>
+                <div class="result" id="wsResult"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 结构分析标签页 -->
+    <div id="structure-tab" class="tab-content">
+        <div class="grid">
+            <!-- 工具8: URL规范化 -->
+            <div class="tool-section">
+                <h2>📏 URL规范化</h2>
+                <select id="normalizationType">
+                    <option value="full">完整规范化</option>
+                    <option value="path">路径规范化</option>
+                    <option value="case">大小写规范化</option>
+                    <option value="encoding">编码规范化</option>
+                </select>
+                <input type="text" id="normalizeUrl" value="HTTPS://Example.com/.././path//to%20page?q=test">
+                <button onclick="normalizeURL()">规范化URL</button>
+                <div class="result" id="normalizeResult"></div>
+            </div>
+
+            <!-- 工具9: 国际域名分析 -->
+            <div class="tool-section">
+                <h2>🌐 国际域名(IDN)分析</h2>
+                <input type="text" id="idnUrl" value="https://例え.テスト" placeholder="国际化域名">
+                <button onclick="analyzeIDN()">分析IDN</button>
+                <div class="result" id="idnResult"></div>
+            </div>
+
+            <!-- 工具10: URL路径遍历检测 -->
+            <div class="tool-section">
+                <h2>🔄 路径遍历检测</h2>
+                <input type="text" id="traversalUrl" value="https://example.com/files/../../etc/passwd" placeholder="URL路径">
+                <button onclick="detectTraversal()">检测遍历</button>
+                <div class="result" id="traversalResult"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 高级工具标签页 -->
+    <div id="advanced-tab" class="tab-content">
+        <div class="grid">
+            <!-- 工具11: URL签名生成 -->
+            <div class="tool-section">
+                <h2>🔑 URL签名生成</h2>
+                <div class="param-row">
+                    <input type="text" id="signUrl" placeholder="要签名的URL" style="grid-column: 1 / 4;">
+                </div>
+                <div class="param-row">
+                    <input type="text" id="secretKey" value="my-secret-key" placeholder="密钥">
+                    <select id="hashAlgo">
+                        <option>HMAC-SHA256</option>
+                        <option>HMAC-SHA1</option>
+                        <option>HMAC-MD5</option>
+                    </select>
+                    <button onclick="signURL()">生成签名</button>
+                </div>
+                <div class="result" id="signResult"></div>
+            </div>
+
+            <!-- 工具12: Bloom Filter URL检测 -->
+            <div class="tool-section">
+                <h2>🌸 Bloom Filter检测</h2>
+                <textarea id="bloomUrls" placeholder="输入URL列表 (每行一个)">https://example.com/page1
+https://example.com/page2
+https://test.com/api
+https://example.com/page1
+https://newdomain.com</textarea>
+                <button onclick="bloomFilterTest()">Bloom Filter检测</button>
+                <div class="result" id="bloomResult"></div>
+            </div>
+
+            <!-- 工具13: URL熵值分析 -->
+            <div class="tool-section">
+                <h2>📊 URL熵值分析</h2>
+                <input type="text" id="entropyUrl" placeholder="输入URL">
+                <button onclick="analyzeEntropy()">计算熵值</button>
+                <div class="result" id="entropyResult"></div>
+            </div>
+
+            <!-- 工具14: 差分URL分析 -->
+            <div class="tool-section">
+                <h2>🔬 差分URL分析</h2>
+                <div class="param-row">
+                    <input type="text" id="diffUrl1" value="https://example.com/v1/api?q=test" placeholder="URL1">
+                    <input type="text" id="diffUrl2" value="https://example.com/v2/api?q=test" placeholder="URL2">
+                    <button onclick="diffURLs()">分析差异</button>
+                </div>
+                <div class="result" id="diffResult"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 标签页切换
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName + '-tab').classList.add('active');
+        }
+
+        // 工具1: URL注入检测
+        function detectInjection() {
+            const url = document.getElementById('injectionUrl').value;
+            const result = document.getElementById('injectionResult');
+            
+            try {
+                const urlObj = new URL(url);
+                let vulnerabilities = [];
+                
+                // XSS检测
+                const xssPatterns = [
+                    /<script>/i, /javascript:/i, /onload=/i, /onerror=/i,
+                    /onclick=/i, /onmouseover=/i, /alert\(/i, /eval\(/i
+                ];
+                
+                // SQL注入检测
+                const sqlPatterns = [
+                    /union.*select/i, /select.*from/i, /insert.*into/i,
+                    /update.*set/i, /delete.*from/i, /drop.*table/i,
+                    /1=1/, /' OR '1'='1/, /--\s*$/, /\/\*.*\*\//,
+                    /exec\(/i, /xp_cmdshell/i
+                ];
+                
+                // 目录遍历检测
+                const traversalPatterns = [
+                    /\.\.\//, /\.\.\\/, /etc\/passwd/, /win\.ini/,
+                    /\.\.%2f/, /\.\.%5c/, /%2e%2e%2f/
+                ];
+                
+                // 命令注入检测
+                const cmdPatterns = [
+                    /\|.*ls/, /\|.*cat/, /\|.*rm/, /;.*ls/, /;.*cat/,
+                    /\|\|.*ping/, /&&.*ping/, /`.*`/, /\$\(.*\)/
+                ];
+                
+                // 重定向检测
+                const redirectPatterns = [
+                    /redirect=/i, /return=/i, /url=/i, /next=/i,
+                    /goto=/i, /link=/i, /dest=/i, /target=/i
+                ];
+                
+                // 检查整个URL
+                const urlString = urlObj.href;
+                const searchParams = urlObj.search;
+                
+                vulnerabilities = detectPatterns('XSS', xssPatterns, urlString, vulnerabilities);
+                vulnerabilities = detectPatterns('SQL注入', sqlPatterns, urlString, vulnerabilities);
+                vulnerabilities = detectPatterns('路径遍历', traversalPatterns, urlString, vulnerabilities);
+                vulnerabilities = detectPatterns('命令注入', cmdPatterns, urlString, vulnerabilities);
+                vulnerabilities = detectPatterns('开放重定向', redirectPatterns, searchParams, vulnerabilities);
+                
+                // 检查编码绕过
+                const encodedUrl = encodeURIComponent(url);
+                if (encodedUrl.includes('%3c') || encodedUrl.includes('%3e')) {
+                    vulnerabilities.push('编码的HTML标签检测');
+                }
+                
+                // 输出结果
+                let output = '🔍 URL注入检测报告\n\n';
+                output += `目标URL: ${urlObj.href}\n`;
+                output += `协议: ${urlObj.protocol}\n`;
+                output += `主机: ${urlObj.host}\n`;
+                output += `路径: ${urlObj.pathname}\n\n`;
+                
+                if (vulnerabilities.length > 0) {
+                    output += '⚠️ 发现潜在安全风险:\n';
+                    vulnerabilities.forEach(vuln => {
+                        output += `  • ${vuln}\n`;
+                    });
+                    output += `\n风险等级: ${vulnerabilities.length > 3 ? '高' : '中'}`;
+                } else {
+                    output += '✅ 未发现明显的注入风险';
+                }
+                
+                // 额外建议
+                output += '\n\n💡 安全建议:';
+                output += '\n1. 对所有输入进行验证和清理';
+                output += '\n2. 使用参数化查询防止SQL注入';
+                output += '\n3. 实施适当的输出编码';
+                output += '\n4. 验证重定向目标';
+                
+                result.textContent = output;
+                
+            } catch (e) {
+                result.textContent = '错误: ' + e.message;
+            }
+        }
+
+        // 模式检测辅助函数
+        function detectPatterns(name, patterns, text, vulnerabilities) {
+            patterns.forEach(pattern => {
+                if (pattern.test(text)) {
+                    vulnerabilities.push(`${name}检测 (模式: ${pattern.toString()})`);
+                }
+            });
+            return vulnerabilities;
+        }
+
+        // 工具2: 同源策略分析
+        function analyzeCORS() {
+            const origin1 = document.getElementById('origin1').value;
+            const origin2 = document.getElementById('origin2').value;
+            const result = document.getElementById('corsResult');
+            
+            try {
+                const url1 = new URL(origin1);
+                const url2 = new URL(origin2);
+                
+                let output = '🌐 同源策略分析\n\n';
+                output += `源1: ${url1.origin}\n`;
+                output += `源2: ${url2.origin}\n\n`;
+                
+                const sameOrigin = url1.origin === url2.origin;
+                output += `同源: ${sameOrigin ? '✅ 是' : '❌ 否'}\n\n`;
+                
+                if (!sameOrigin) {
+                    output += '🔍 差异分析:\n';
+                    output += `协议: ${url1.protocol} vs ${url2.protocol} ${url1.protocol === url2.protocol ? '✅' : '❌'}\n`;
+                    output += `主机名: ${url1.hostname} vs ${url2.hostname} ${url1.hostname === url2.hostname ? '✅' : '❌'}\n`;
+                    output += `端口: ${url1.port || '默认'} vs ${url2.port || '默认'} ${url1.port === url2.port ? '✅' : '❌'}\n\n`;
+                    
+                    // CORS预检请求分析
+                    output += '📋 CORS预检请求要求:\n';
+                    output += '1. 使用简单方法(GET, POST, HEAD)以外的HTTP方法\n';
+                    output += '2. 设置自定义标头\n';
+                    output += '3. 发送凭据(cookies)\n';
+                    output += '4. 使用非简单Content-Type\n\n';
+                    
+                    output += '🔧 可能的CORS配置:\n';
+                    output += 'Access-Control-Allow-Origin: * (允许所有源)\n';
+                    output += `Access-Control-Allow-Origin: ${url1.origin} (允许特定源)\n`;
+                    output += 'Access-Control-Allow-Credentials: true (允许凭据)\n';
+                }
+                
+                result.textContent = output;
+                
+            } catch (e) {
+                result.textContent = '错误: 请输入有效的URL';
+            }
+        }
+
+        // 工具3: SSRF风险检测
+        function detectSSRF() {
+            const url = document.getElementById('ssrfUrl').value;
+            const result = document.getElementById('ssrfResult');
+            
+            try {
+                const urlObj = new URL(url);
+                let risks = [];
+                
+                // 内部IP地址检测
+                const internalIPs = [
+                    /^10\./, /^172\.(1[6-9]|2[0-9]|3[0-1])\./, /^192\.168\./,
+                    /^127\./, /^169\.254\./, /^0\./, /^localhost$/,
+                    /^::1$/, /^fc00::/, /^fd00::/
+                ];
+                
+                // 云服务元数据端点
+                const cloudMetadata = [
+                    '169.254.169.254', 'metadata.google.internal',
+                    '169.254.170.2', 'instance-data'
+                ];
+                
+                // 检查内部IP
+                internalIPs.forEach(pattern => {
+                    if (pattern.test(urlObj.hostname)) {
+                        risks.push('内部IP地址检测');
+                    }
+                });
+                
+                // 检查云元数据
+                cloudMetadata.forEach(endpoint => {
+                    if (urlObj.hostname.includes(endpoint)) {
+                        risks.push('云服务元数据端点检测');
+                    }
+                });
+                
+                // 检查私有域名
+                const privateTLDs = ['.local', '.internal', '.lan', '.home'];
+                privateTLDs.forEach(tld => {
+                    if (urlObj.hostname.endsWith(tld)) {
+                        risks.push('私有域名检测');
+                    }
+                });
+                
+                let output = '🎯 SSRF(服务器端请求伪造)风险检测\n\n';
+                output += `目标URL: ${urlObj.href}\n`;
+                output += `主机名: ${urlObj.hostname}\n`;
+                output += `协议: ${urlObj.protocol}\n\n`;
+                
+                if (risks.length > 0) {
+                    output += '⚠️ 高风险检测:\n';
+                    risks.forEach(risk => output += `  • ${risk}\n`);
+                    
+                    output += '\n🛡️ 防护建议:\n';
+                    output += '1. 实施URL白名单验证\n';
+                    output += '2. 使用DNS解析限制\n';
+                    output += '3. 禁止访问内部网络\n';
+                    output += '4. 实施请求协议限制\n';
+                    output += '5. 使用中间代理进行请求\n';
+                } else {
+                    output += '✅ 未检测到明显的SSRF风险\n\n';
+                    output += '⚠️ 仍建议实施防护措施:\n';
+                    output += '- 验证所有外部URL\n';
+                    output += '- 限制可访问的协议\n';
+                    output += '- 监控异常请求模式';
+                }
+                
+                result.textContent = output;
+                
+            } catch (e) {
+                result.textContent = '错误: ' + e.message;
+            }
+        }
+
+        // 工具4: URL混淆检测
+        function detectObfuscation() {
+            const url = document.getElementById('obfuscatedUrl').value;
+            const result = document.getElementById('obfuscationResult');
+            
+            try {
+                const urlObj = new URL(url);
+                let techniques = [];
+                
+                // 检查Unicode混淆(同形异义字符)
+                const homoglyphs = /[а-яА-ЯѠѡѢѣѤѥѦѧѨѩѪѫѬѭѮѯѰѱѲѳѴѵҐґ]/;
+                if (homoglyphs.test(url)) {
+                    techniques.push('西里尔字母混淆检测');
+                }
+                
+                // 检查URL编码混淆
+                const doubleEncoded = /%25[0-9a-f]{2}/i;
+                if (doubleEncoded.test(url)) {
+                    techniques.push('双重URL编码检测');
+                }
+                
+                // 检查十六进制编码
+                const hexEncoded = /\\x[0-9a-f]{2}/gi;
+                if (hexEncoded.test(url)) {
+                    techniques.push('十六进制编码检测');
+                }
+                
+                // 检查八进制编码
+                const octalEncoded = /\\[0-7]{3}/g;
+                if (octalEncoded.test(url)) {
+                    techniques.push('八进制编码检测');
+                }
+                
+                // 检查@符号混淆
+                const atConfusion = /@/;
+                if (atConfusion.test(url)) {
+                    const parts = url.split('@');
+                    if (parts.length > 2) {
+                        techniques.push('多个@符号混淆');
+                    }
+                }
+                
+                // 检查IP混淆
+                const ipFormats = [
+                    /^(\d{1,3}\.){3}\d{1,3}$/, // IPv4
+                    /^[0-9a-f:]+$/i, // IPv6
+                    /^\d+$/, // 十进制IP
+                    /^0x[0-9a-f]+$/i, // 十六进制IP
+                    /^0[0-7]+$/, // 八进制IP
+                    /^\[.*\]$/ // IPv6括号格式
+                ];
+                
+                ipFormats.forEach(format => {
+                    if (format.test(urlObj.hostname)) {
+                        techniques.push('IP地址格式检测');
+                    }
+                });
+                
+                let output = '🎭 URL混淆技术检测\n\n';
+                output += `原始URL: ${url}\n`;
+                output += `解析后: ${urlObj.href}\n\n`;
+                
+                // 显示规范化后的URL
+                const normalized = url.toLowerCase()
+                    .replace(/\/\/+/g, '/')
+                    .replace(/\/$/, '');
+                output += `规范化: ${normalized}\n\n`;
+                
+                if (techniques.length > 0) {
+                    output += '⚠️ 检测到混淆技术:\n';
+                    techniques.forEach(tech => output += `  • ${tech}\n`);
+                    
+                    output += '\n🔍 详细分析:\n';
+                    
+                    // 显示字符分析
+                    output += '\n字符分析:\n';
+                    for (let i = 0; i < Math.min(url.length, 50); i++) {
+                        const char = url[i];
+                        const code = char.charCodeAt(0);
+                        output += `${char} (U+${code.toString(16).toUpperCase().padStart(4, '0')}) `;
+                        if ((i + 1) % 5 === 0) output += '\n';
+                    }
+                    
+                    output += '\n\n🛡️ 防护建议:\n';
+                    output += '1. 实施严格的URL验证\n';
+                    output += '2. 规范化所有输入URL\n';
+                    output += '3. 使用Unicode规范化(NFKC)\n';
+                    output += '4. 检查域名白名单\n';
+                    output += '5. 记录可疑URL模式';
+                } else {
+                    output += '✅ 未检测到明显的混淆技术';
+                }
+                
+                result.textContent = output;
+                
+            } catch (e) {
+                result.textContent = '错误: ' + e.message;
+            }
+        }
+
+        // 工具5: HTTP标头模拟
+        function simulateRequest() {
+            const method = document.getElementById('headerMethod').value;
+            const headersText = document.getElementById('customHeaders').value;
+            const result = document.getElementById('headersResult');
+            
+            const url = document.getElementById('masterUrl').value || 'https://example.com';
+            
+            try {
+                const urlObj = new URL(url);
+                const headers = {};
+                
+                // 解析自定义标头
+                headersText.split('\n').forEach(line => {
+                    const trimmed = line.trim();
+                    if (trimmed && trimmed.includes(':')) {
+                        const [key, ...valueParts] = trimmed.split(':');
+                        headers[key.trim()] = valueParts.join(':').trim();
+                    }
+                });
+                
+                // 添加常用标头
+                const defaultHeaders = {
+                    'Host': urlObj.host,
+                    'Connection': 'keep-alive',
+                    'Accept-Encoding': 'gzip, deflate, br',
+                    'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8'
+                };
+                
+                const allHeaders = { ...defaultHeaders, ...headers };
+                
+                let output = `📋 ${method} 请求模拟\n\n`;
+                output += `目标URL: ${urlObj.href}\n`;
+                output += `请求方法: ${method}\n\n`;
+                
+                output += '请求标头:\n';
+                output += '─'.repeat(50) + '\n';
+                
+                for (const [key, value] of Object.entries(allHeaders)) {
+                    output += `${key}: ${value}\n`;
+                }
+                
+                // 显示curl命令
+                output += '\nCURL命令:\n';
+                output += '─'.repeat(50) + '\n';
+                let curlCmd = `curl -X ${method} "${urlObj.href}"`;
+                for (const [key, value] of Object.entries(headers)) {
+                    curlCmd += ` \\\n  -H "${key}: ${value}"`;
+                }
+                output += curlCmd;
+                
+                // 安全标头建议
+                output += '\n\n🔒 建议的安全标头:\n';
+                output += '─'.repeat(50) + '\n';
+                const securityHeaders = {
+                    'Content-Security-Policy': "default-src 'self'",
+                    'X-Content-Type-Options': 'nosniff',
+                    'X-Frame-Options': 'DENY',
+                    'X-XSS-Protection': '1; mode=block',
+                    'Referrer-Policy': 'strict-origin-when-cross-origin',
+                    'Strict-Transport-Security': 'max-age=31536000; includeSubDomains'
+                };
+                
+                for (const [key, value] of Object.entries(securityHeaders)) {
+                    output += `${key}: ${value}\n`;
+                }
+                
+                result.textContent = output;
+                
+            } catch (e) {
+                result.textContent = '错误: ' + e.message;
+            }
+        }
+
+        // 工具6: 协议升级分析
+        function analyzeUpgrade() {
+            const url = document.getElementById('upgradeUrl').value || document.getElementById('masterUrl').value;
+            const result = document.getElementById('upgradeResult');
+            
+            try {
+                const urlObj = new URL(url);
+                
+                let output = '🔄 协议升级分析\n\n';
+                output += `当前协议: ${urlObj.protocol}\n\n`;
+                
+                // HTTP -> HTTPS升级
+                if (urlObj.protocol === 'http:') {
+                    const httpsUrl = url.replace('http:', 'https:');
+                    output += `建议升级: ${httpsUrl}\n\n`;
+                    
+                    output += '升级检查:\n';
+                    output += '─'.repeat(50) + '\n';
+                    output += '1. 检查证书有效性\n';
+                    output += '2. 验证HSTS头\n';
+                    output += '3. 更新所有内部链接\n';
+                    output += '4. 设置301重定向\n';
+                    output += '5. 更新XML站点地图\n\n';
+                }
+                
+                // WebSocket升级
+                output += 'WebSocket协议:\n';
+                output += '─'.repeat(50) + '\n';
+                const wsUrl = url.replace(/^http/, 'ws').replace(/^https/, 'wss');
+                output += `WebSocket URL: ${wsUrl}\n\n`;
+                
+                // 协议特性对比
+                output += '协议特性对比:\n';
+                output += '─'.repeat(50) + '\n';
+                const protocols = [
+                    { name: 'HTTP/1.1', features: '持久连接, 管道化', security: '基础' },
+                    { name: 'HTTP/2', features: '多路复用, 头部压缩', security: 'TLS推荐' },
+                    { name: 'HTTP/3', features: 'QUIC, 0-RTT', security: '强制TLS' },
+                    { name: 'WebSocket', features: '全双工, 实时', security: '需要TLS' }
+                ];
+                
+                protocols.forEach(proto => {
+                    output += `${proto.name.padEnd(10)} | ${proto.features.padEnd(25)} | ${proto.security}\n`;
+                });
+                
+                // 升级策略
+                output += '\n升级策略建议:\n';
+                output += '─'.repeat(50) + '\n';
+                output += '1. 实施逐步升级\n';
+                output += '2. 使用协议检测\n';
+                output += '3. 保持向后兼容\n';
+                output += '4. 监控性能影响\n';
+                output += '5. 测试中断情况\n';
+                
+                result.textContent = output;
+                
+            } catch (e) {
+                result.textContent = '错误: ' + e.message;
+            }
+        }
+
+        // 工具7: WebSocket URL分析
+        function analyzeWebSocket() {
+            const url = document.getElementById('wsUrl').value;
+            const result = document.getElementById('wsResult');
+            
+            try {
+                const urlObj = new URL(url);
+                const isSecure = urlObj.protocol === 'wss:';
+                const isWebSocket = urlObj.protocol === 'ws:' || isSecure;
+                
+                let output = '⚡ WebSocket URL分析\n\n';
+                output += `URL: ${url}\n`;
+                output += `协议: ${urlObj.protocol}\n`;
+                output += `安全: ${isSecure ? '✅ WSS (安全)' : '⚠️ WS (不安全)'}\n`;
+                output += `主机: ${urlObj.host}\n`;
+                output += `路径: ${urlObj.pathname}\n\n`;
+                
+                if (!isWebSocket) {
+                    output += '❌ 不是WebSocket协议\n';
+                    const suggested = url.replace(/^http/, 'ws').replace(/^https/, 'wss');
+                    output += `建议: ${suggested}`;
+                    result.textContent = output;
+                    return;
+                }
+                
+                // WebSocket特定分析
+                output += '🔌 WebSocket连接参数:\n';
+                output += '─'.repeat(50) + '\n';
+                
+                const params = new URLSearchParams(urlObj.search);
+                if (params.toString()) {
+                    output += '查询参数:\n';
+                    for (const [key, value] of params) {
+                        output += `  ${key}=${value}\n`;
+                    }
+                } else {
+                    output += '无查询参数\n';
+                }
+                
+                // WebSocket握手示例
+                output += '\n🤝 WebSocket握手示例:\n';
+                output += '─'.repeat(50) + '\n';
+                output += '客户端请求:\n';
+                output += `GET ${urlObj.pathname}${urlObj.search} HTTP/1.1\n`;
+                output += `Host: ${urlObj.host}\n`;
+                output += 'Upgrade: websocket\n';
+                output += 'Connection: Upgrade\n';
+                output += 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\n';
+                output += 'Sec-WebSocket-Version: 13\n\n';
+                
+                output += '服务器响应:\n';
+                output += 'HTTP/1.1 101 Switching Protocols\n';
+                output += 'Upgrade: websocket\n';
+                output += 'Connection: Upgrade\n';
+                output += 'Sec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=\n';
+                
+                // 安全建议
+                output += '\n🔒 WebSocket安全建议:\n';
+                output += '─'.repeat(50) + '\n';
+                output += '1. 始终使用WSS (WebSocket Secure)\n';
+                output += '2. 验证Origin头\n';
+                output += '3. 实施认证和授权\n';
+                output += '4. 限制消息大小和频率\n';
+                output += '5. 监控连接状态\n';
+                output += '6. 使用心跳机制检测死连接\n';
+                
+                result.textContent = output;
+                
+            } catch (e) {
+                result.textContent = '错误: ' + e.message;
+            }
+        }
+
+        // 工具8: URL规范化
+        function normalizeURL() {
+            const url = document.getElementById('normalizeUrl').value;
+            const type = document.getElementById('normalizationType').value;
+            const result = document.getElementById('normalizeResult');
+            
+            try {
+                let normalized = url;
+                let steps = [];
+                
+                // 完整规范化
+                if (type === 'full' || type === 'path') {
+                    // 移除多余斜杠
+                    normalized = normalized.replace(/\/\/+/g, '/');
+                    steps.push('移除多余斜杠');
+                    
+                    // 解析路径遍历
+                    const pathParts = normalized.split('/');
+                    const newParts = [];
+                    
+                    for (const part of pathParts) {
+                        if (part === '..') {
+                            if (newParts.length > 0) {
+                                newParts.pop();
+                                steps.push('解析..上一级目录');
+                            }
+                        } else if (part !== '.' && part !== '') {
+                            newParts.push(part);
+                        } else if (part === '.') {
+                            steps.push('移除.当前目录');
+                        }
+                    }
+                    
+                    normalized = newParts.join('/');
+                    if (!normalized.startsWith('/') && normalized.includes('/')) {
+                        normalized = '/' + normalized;
+                    }
+                }
+                
+                // 大小写规范化
+                if (type === 'full' || type === 'case') {
+                    const urlObj = new URL(normalized.startsWith('http') ? normalized : 'http://' + normalized);
+                    const lowerHost = urlObj.hostname.toLowerCase();
+                    
+                    if (urlObj.hostname !== lowerHost) {
+                        steps.push('主机名转换为小写');
+                        normalized = normalized.replace(urlObj.hostname, lowerHost);
+                    }
+                }
+                
+                // 编码规范化
+                if (type === 'full' || type === 'encoding') {
+                    // 解码然后重新编码
+                    try {
+                        const decoded = decodeURIComponent(normalized);
+                        const reencoded = encodeURI(decoded);
+                        if (normalized !== reencoded) {
+                            steps.push('标准化URL编码');
+                            normalized = reencoded;
+                        }
+                    } catch (e) {
+                        // 如果解码失败，尝试部分解码
+                    }
+                    
+                    // 标准化空格编码
+                    normalized = normalized.replace(/%20/g, '+');
+                    steps.push('标准化空格编码为+');
+                }
+                
+                let output = `📏 URL规范化 (${type})\n\n`;
+                output += `原始URL: ${url}\n`;
+                output += `规范化后: ${normalized}\n\n`;
+                
+                if (steps.length > 0) {
+                    output += '执行步骤:\n';
+                    steps.forEach(step => output += `  • ${step}\n`);
+                } else {
+                    output += '无需规范化操作\n';
+                }
+                
+                // 验证规范化结果
+                output += '\n验证结果:\n';
+                try {
+                    const urlObj = new URL(normalized.startsWith('http') ? normalized : 'https://' + normalized);
+                    output += '✅ URL有效\n';
+                    output += `协议: ${urlObj.protocol}\n`;
+                    output += `主机: ${urlObj.host}\n`;
+                    output += `路径: ${urlObj.pathname}\n`;
+                } catch (e) {
+                    output += `❌ URL无效: ${e.message}\n`;
+                }
+                
+                result.textContent = output;
+                
+            } catch (e) {
+                result.textContent = '错误: ' + e.message;
+            }
+        }
+
+        // 工具9: 国际域名分析
+        function analyzeIDN() {
+            const url = document.getElementById('idnUrl').value;
+            const result = document.getElementById('idnResult');
+            
+            try {
+                const urlObj = new URL(url.startsWith('http') ? url : 'https://' + url);
+                const hostname = urlObj.hostname;
+                
+                let output = '🌐 国际域名(IDN)分析\n\n';
+                output += `原始域名: ${hostname}\n`;
+                
+                // 检查是否是IDN
+                const hasNonASCII = /[^\x00-\x7F]/.test(hostname);
+                
+                if (hasNonASCII) {
+                    output += '检测到非ASCII字符\n\n';
+                    
+                    // 转换为Punycode
+                    try {
+                        const punycode = hostname.toLowerCase().normalize('NFC');
+                        const encoded = 'xn--' + btoa(unescape(encodeURIComponent(punycode))).replace(/[+/=]/g, '').toLowerCase();
+                        
+                        output += 'Punycode编码:\n';
+                        output += `  ${encoded}\n\n`;
+                        
+                        // 显示Unicode分析
+                        output += 'Unicode字符分析:\n';
+                        for (let i = 0; i < hostname.length; i++) {
+                            const char = hostname[i];
+                            const code = char.charCodeAt(0);
+                            const hex = code.toString(16).toUpperCase();
+                            
+                            output += `  ${char} (U+${hex.padStart(4, '0')})`;
+                            
+                            // 检查同形异义字符
+                            const homoglyphs = {
+                                'а': 'a', 'е': 'e', 'о': 'o', 'р': 'p',
+                                'с': 'c', 'у': 'y', 'х': 'x', 'і': 'i'
+                            };
+                            
+                            if (homoglyphs[char]) {
+                                output += ` → 类似于拉丁字母 "${homoglyphs[char]}"`;
+                            }
+                            
+                            output += '\n';
+                        }
+                        
+                        // 安全警告
+                        output += '\n⚠️ 安全警告:\n';
+                        output += 'IDN可能被用于钓鱼攻击:\n';
+                        output += '1. 同形异义字符攻击\n';
+                        output += '2. 视觉相似域名\n';
+                        output += '3. 混合脚本攻击\n\n';
+                        
+                        output += '🔒 防护建议:\n';
+                        output += '• 在地址栏显示Punycode\n';
+                        output += '• 实施严格的域名验证\n';
+                        output += '• 教育用户识别可疑域名\n';
+                        
+                    } catch (e) {
+                        output += `Punycode转换失败: ${e.message}\n`;
+                    }
+                } else {
+                    output += '未检测到IDN (仅ASCII字符)\n';
+                }
+                
+                // 浏览器兼容性
+                output += '\n🌍 浏览器兼容性:\n';
+                output += '─'.repeat(50) + '\n';
+                const compatibility = [
+                    { browser: 'Chrome', version: '≥ 7', support: '✅' },
+                    { browser: 'Firefox', version: '≥ 3.0', support: '✅' },
+                    { browser: 'Safari', version: '≥ 3.2', support: '✅' },
+                    { browser: 'Edge', version: '所有版本', support: '✅' },
+                    { browser: 'IE', version: '≥ 7', support: '⚠️ 部分' }
+                ];
+                
+                compatibility.forEach(item => {
+                    output += `${item.browser.padEnd(10)} ${item.version.padEnd(10)} ${item.support}\n`;
+                });
+                
+                result.textContent = output;
+                
+            } catch (e) {
+                result.textContent = '错误: ' + e.message;
+            }
+        }
+
+        // 工具10: 路径遍历检测
+        function detectTraversal() {
+            const url = document.getElementById('traversalUrl').value;
+            const result = document.getElementById('traversalResult');
+            
+            try {
+                const urlObj = new URL(url.startsWith('http') ? url : 'https://' + url);
+                const path = urlObj.pathname;
+                
+                let output = '🔄 路径遍历检测\n\n';
+                output += `原始路径: ${path}\n`;
+                
+                // 检测路径遍历模式
+                const traversalPatterns = [
+                    /\.\.\//g,
+                    /\.\.\\/g,
+                    /\/\.\.\//g,
+                    /\\\.\.\\/g,
+                    /%2e%2e\//gi,
+                    /%2e%2e\\/gi,
+                    /\.%2e\//gi,
+                    /\.%2e\\/gi
+                ];
+                
+                let found = [];
+                traversalPatterns.forEach((pattern, index) => {
+                    const matches = path.match(pattern);
+                    if (matches) {
+                        found.push({
+                            pattern: pattern.toString(),
+                            matches: matches,
+                            count: matches.length
+                        });
+                    }
+                });
+                
+                if (found.length > 0) {
+                    output += '\n⚠️ 检测到路径遍历尝试:\n';
+                    found.forEach(item => {
+                        output += `  模式: ${item.pattern}\n`;
+                        output += `  匹配: ${item.matches.join(', ')}\n`;
+                        output += `  次数: ${item.count}\n\n`;
+                    });
+                    
+                    // 解析最终路径
+                    output += '实际访问路径:\n';
+                    const parts = path.split(/[\/\\]/).filter(p => p);
+                    const resolved = [];
+                    
+                    for (const part of parts) {
+                        if (part === '..') {
+                            if (resolved.length > 0) resolved.pop();
+                        } else if (part !== '.') {
+                            resolved.push(part);
+                        }
+                    }
+                    
+                    output += `  /${resolved.join('/')}\n\n`;
+                    
+                    // 安全建议
+                    output += '🔒 防护措施:\n';
+                    output += '1. 实施输入验证\n';
+                    output += '2. 使用白名单文件路径\n';
+                    output += '3. 规范化路径后验证\n';
+                    output += '4. 设置文件系统权限\n';
+                    output += '5. 记录可疑访问尝试\n';
+                    
+                } else {
+                    output += '\n✅ 未检测到路径遍历\n\n';
+                    
+                    // 仍然显示规范化路径
+                    const parts = path.split(/[\/\\]/).filter(p => p);
+                    output += `规范化路径: /${parts.join('/')}\n`;
+                }
+                
+                // 常见易受攻击的路径
+                output += '\n🎯 常见攻击目标:\n';
+                const targets = [
+                    '/etc/passwd', '/etc/shadow', '/etc/hosts',
+                    '/var/log/', '/proc/self/environ',
+                    'C:\\Windows\\System32\\', '/WEB-INF/web.xml',
+                    '.git/config', '.env', 'wp-config.php'
+                ];
+                
+                targets.forEach(target => {
+                    if (path.includes(target)) {
+                        output += `⚠️ 包含敏感路径: ${target}\n`;
+                    }
+                });
+                
+                result.textContent = output;
+                
+            } catch (e) {
+                result.textContent = '错误: ' + e.message;
+            }
+        }
+
+        // 工具11: URL签名生成
+        function signURL() {
+            const url = document.getElementById('signUrl').value || document.getElementById('masterUrl').value;
+            const secret = document.getElementById('secretKey').value;
+            const algo = document.getElementById('hashAlgo').value;
+            const result = document.getElementById('signResult');
+            
+            try {
+                const urlObj = new URL(url);
+                
+                // 创建签名参数
+                const timestamp = Math.floor(Date.now() / 1000);
+                const nonce = Math.random().toString(36).substring(2, 15);
+                
+                // 添加签名参数
+                urlObj.searchParams.append('timestamp', timestamp);
+                urlObj.searchParams.append('nonce', nonce);
+                
+                // 准备签名字符串
+                const params = new URLSearchParams(urlObj.search);
+                params.sort(); // 参数排序
+                
+                const signString = Array.from(params)
+                    .map(([k, v]) => `${k}=${v}`)
+                    .join('&');
+                
+                // 生成签名
+                let signature = '';
+                if (algo === 'HMAC-SHA256') {
+                    // 简单模拟 - 实际应使用crypto API
+                    signature = btoa(signString + secret).substring(0, 32);
+                } else if (algo === 'HMAC-SHA1') {
+                    signature = btoa(signString + secret).substring(0, 20);
+                } else {
+                    signature = btoa(signString + secret).substring(0, 16);
+                }
+                
+                // 添加签名到URL
+                urlObj.searchParams.append('signature', signature);
+                
+                let output = `🔑 URL签名生成 (${algo})\n\n`;
+                output += `原始URL: ${url}\n`;
+                output += `密钥: ${secret}\n`;
+                output += `时间戳: ${timestamp}\n`;
+                output += `随机数: ${nonce}\n\n`;
+                
+                output += '签名字符串:\n';
+                output += '─'.repeat(50) + '\n';
+                output += `${signString}\n\n`;
+                
+                output += '生成的签名:\n';
+                output += `  ${signature}\n\n`;
+                
+                output += '签名后的URL:\n';
+                output += '─'.repeat(50) + '\n';
+                output += urlObj.href + '\n\n';
+                
+                output += '📋 验证步骤:\n';
+                output += '1. 提取timestamp, nonce, signature参数\n';
+                output += '2. 按字母顺序排列其他参数\n';
+                output += `3. 使用${algo}和密钥生成签名\n`;
+                output += '4. 比较签名是否一致\n';
+                output += '5. 验证timestamp是否过期\n';
+                
+                result.textContent = output;
+                
+            } catch (e) {
+                result.textContent = '错误: ' + e.message;
+            }
+        }
+
+        // 工具12: Bloom Filter检测
+        function bloomFilterTest() {
+            const urlsText = document.getElementById('bloomUrls').value;
+            const result = document.getElementById('bloomResult');
+            
+            const urls = urlsText.split('\n').filter(url => url.trim());
+            
+            // 简单Bloom Filter模拟
+            const bloomSize = 1024; // 位数组大小
+            const hashFunctions = 3; // 哈希函数数量
+            
+            let bloomFilter = new Array(bloomSize).fill(0);
+            let results = [];
+            
+            // 简单哈希函数
+            function hash1(str) {
+                let hash = 0;
+                for (let i = 0; i < str.length; i++) {
+                    hash = (hash << 5) - hash + str.charCodeAt(i);
+                    hash |= 0;
+                }
+                return Math.abs(hash) % bloomSize;
+            }
+            
+            function hash2(str) {
+                let hash = 5381;
+                for (let i = 0; i < str.length; i++) {
+                    hash = (hash << 5) + hash + str.charCodeAt(i);
+                }
+                return Math.abs(hash) % bloomSize;
+            }
+            
+            function hash3(str) {
+                let hash = 0;
+                for (let i = 0; i < str.length; i++) {
+                    hash = str.charCodeAt(i) + ((hash << 7) - hash);
+                }
+                return Math.abs(hash) % bloomSize;
+            }
+            
+            let output = '🌸 Bloom Filter URL检测\n\n';
+            output += `URL数量: ${urls.length}\n`;
+            output += `Bloom Filter大小: ${bloomSize} bits\n`;
+            output += `哈希函数数量: ${hashFunctions}\n\n`;
+            
+            output += '处理结果:\n';
+            output += '─'.repeat(50) + '\n';
+            
+            let falsePositives = 0;
+            let truePositives = 0;
+            let falseNegatives = 0;
+            
+            urls.forEach((url, index) => {
+                const h1 = hash1(url);
+                const h2 = hash2(url);
+                const h3 = hash3(url);
+                
+                // 检查是否可能在集合中
+                const mightExist = bloomFilter[h1] && bloomFilter[h2] && bloomFilter[h3];
+                
+                // 检查是否确实存在过
+                const seenBefore = results.slice(0, index).some(r => r.url === url);
+                
+                if (mightExist && !seenBefore) {
+                    falsePositives++;
+                    output += `${index + 1}. ❌ 误报: ${url}\n`;
+                } else if (mightExist && seenBefore) {
+                    truePositives++;
+                    output += `${index + 1}. ✅ 存在: ${url}\n`;
+                } else if (!mightExist && seenBefore) {
+                    falseNegatives++;
+                    output += `${index + 1}. ❌ 漏报: ${url}\n`;
+                } else {
+                    output += `${index + 1}. ➕ 新增: ${url}\n`;
+                    
+                    // 添加到Bloom Filter
+                    bloomFilter[h1] = 1;
+                    bloomFilter[h2] = 1;
+                    bloomFilter[h3] = 1;
+                }
+                
+                results.push({ url, h1, h2, h3, mightExist, seenBefore });
+            });
+            
+            // 统计信息
+            const addedCount = urls.length - falsePositives - truePositives;
+            const fillRate = bloomFilter.filter(bit => bit === 1).length / bloomSize;
+            
+            output += '\n📊 统计信息:\n';
+            output += '─'.repeat(50) + '\n';
+            output += `新增URL: ${addedCount}\n`;
+            output += `重复URL: ${truePositives}\n`;
+            output += `误报率: ${(falsePositives / urls.length * 100).toFixed(2)}%\n`;
+            output += `填充率: ${(fillRate * 100).toFixed(2)}%\n\n`;
+            
+            // 理论误报率
+            const theoreticalFP = Math.pow(fillRate, hashFunctions);
+            output += `理论误报率: ${(theoreticalFP * 100).toFixed(4)}%\n`;
+            
+            // 应用场景
+            output += '\n🎯 Bloom Filter应用场景:\n';
+            output += '─'.repeat(50) + '\n';
+            output += '1. 恶意URL检测\n';
+            output += '2. 重复内容识别\n';
+            output += '3. 缓存预热\n';
+            output += '4. 爬虫去重\n';
+            output += '5. 垃圾邮件过滤\n';
+            
+            result.textContent = output;
+        }
+
+        // 工具13: URL熵值分析
+        function analyzeEntropy() {
+            const url = document.getElementById('entropyUrl').value || document.getElementById('masterUrl').value;
+            const result = document.getElementById('entropyResult');
+            
+            try {
+                const urlObj = new URL(url);
+                const fullUrl = urlObj.href;
+                
+                // 计算字符频率
+                const freq = {};
+                for (const char of fullUrl) {
+                    freq[char] = (freq[char] || 0) + 1;
+                }
+                
+                // 计算香农熵
+                let entropy = 0;
+                const length = fullUrl.length;
+                
+                for (const char in freq) {
+                    const probability = freq[char] / length;
+                    entropy -= probability * Math.log2(probability);
+                }
+                
+                // 计算最大可能熵
+                const maxEntropy = Math.log2(Object.keys(freq).length);
+                
+                // 计算压缩比估计
+                const compressionRatio = entropy / maxEntropy;
+                
+                let output = '📊 URL熵值分析\n\n';
+                output += `URL: ${fullUrl}\n`;
+                output += `长度: ${length} 字符\n`;
+                output += `唯一字符: ${Object.keys(freq).length}\n\n`;
+                
+                output += '🔢 熵值计算:\n';
+                output += '─'.repeat(50) + '\n';
+                output += `香农熵: ${entropy.toFixed(4)} bits/字符\n`;
+                output += `最大熵: ${maxEntropy.toFixed(4)} bits/字符\n`;
+                output += `熵比: ${(entropy / maxEntropy * 100).toFixed(2)}%\n`;
+                output += `压缩比估计: ${compressionRatio.toFixed(4)}\n\n`;
+                
+                // 字符分布分析
+                output += '📈 字符分布 (前20个):\n';
+                output += '─'.repeat(50) + '\n';
+                
+                const sortedChars = Object.entries(freq)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 20);
+                
+                sortedChars.forEach(([char, count]) => {
+                    const percentage = (count / length * 100).toFixed(2);
+                    const bar = '█'.repeat(Math.round(percentage / 5));
+                    const displayChar = char === ' ' ? '␣' : 
+                                      char === '\t' ? '→' : 
+                                      char === '\n' ? '↵' : char;
+                    
+                    output += `${displayChar.padEnd(2)} (${count.toString().padEnd(3)}) ${percentage.padStart(6)}% ${bar}\n`;
+                });
+                
+                // 熵值解释
+                output += '\n📋 熵值解释:\n';
+                output += '─'.repeat(50) + '\n';
+                output += '高熵URL (> 4.5 bits/char):\n';
+                output += '  • 可能包含加密数据\n';
+                output += '  • 可能包含随机标识符\n';
+                output += '  • 可能包含敏感信息\n\n';
+                
+                output += '中熵URL (3.0-4.5 bits/char):\n';
+                output += '  • 正常内容URL\n';
+                output += '  • 包含多种字符\n';
+                output += '  • 良好的随机性\n\n';
+                
+                output += '低熵URL (< 3.0 bits/char):\n';
+                output += '  • 重复模式\n';
+                output += '  • 简单结构\n';
+                output += '  • 可能可预测\n';
+                
+                // 安全分析
+                output += '\n🔒 安全分析:\n';
+                output += '─'.repeat(50) + '\n';
+                if (entropy > 5) {
+                    output += '⚠️ 高熵URL - 可能包含敏感或加密数据\n';
+                } else if (entropy < 2) {
+                    output += '⚠️ 低熵URL - 可能易于预测或遭受枚举攻击\n';
+                } else {
+                    output += '✅ 熵值正常 - 无明显安全风险\n';
+                }
+                
+                // 压缩潜力
+                output += '\n💾 压缩潜力:\n';
+                output += `理论压缩率: ${(1 - compressionRatio) * 100}%\n`;
+                
+                result.textContent = output;
+                
+            } catch (e) {
+                result.textContent = '错误: ' + e.message;
+            }
+        }
+
+        // 工具14: 差分URL分析
+        function diffURLs() {
+            const url1 = document.getElementById('diffUrl1').value;
+            const url2 = document.getElementById('diffUrl2').value;
+            const result = document.getElementById('diffResult');
+            
+            try {
+                const urlObj1 = new URL(url1);
+                const urlObj2 = new URL(url2);
+                
+                let output = '🔬 差分URL分析\n\n';
+                output += `URL1: ${urlObj1.href}\n`;
+                output += `URL2: ${urlObj2.href}\n\n`;
+                
+                // 分析差异
+                const components = ['protocol', 'hostname', 'port', 'pathname', 'search', 'hash', 'username', 'password'];
+                const diffs = [];
+                const sames = [];
+                
+                for (const comp of components) {
+                    const val1 = urlObj1[comp] || '(空)';
+                    const val2 = urlObj2[comp] || '(空)';
+                    
+                    if (val1 === val2) {
+                        sames.push(`${comp}: ${val1}`);
+                    } else {
+                        diffs.push({
+                            component: comp,
+                            value1: val1,
+                            value2: val2,
+                            diffType: classifyDiff(val1, val2)
+                        });
+                    }
+                }
+                
+                // 显示相同部分
+                if (sames.length > 0) {
+                    output += '✅ 相同部分:\n';
+                    output += '─'.repeat(50) + '\n';
+                    sames.forEach(item => output += `  ${item}\n`);
+                    output += '\n';
+                }
+                
+                // 显示差异部分
+                if (diffs.length > 0) {
+                    output += '🔀 差异部分:\n';
+                    output += '─'.repeat(50) + '\n';
+                    
+                    diffs.forEach(diff => {
+                        output += `${diff.component}:\n`;
+                        output += `  URL1: ${diff.value1}\n`;
+                        output += `  URL2: ${diff.value2}\n`;
+                        output += `  类型: ${diff.diffType}\n`;
+                        output += '  '.repeat(40) + '\n';
+                    });
+                }
+                
+                // API版本检测
+                const versionDiff = detectAPIVersion(urlObj1.pathname, urlObj2.pathname);
+                if (versionDiff) {
+                    output += '\n🔄 API版本检测:\n';
+                    output += '─'.repeat(50) + '\n';
+                    output += versionDiff + '\n';
+                }
+                
+                // 参数差异分析
+                const paramDiffs = analyzeParams(urlObj1.search, urlObj2.search);
+                if (paramDiffs) {
+                    output += '\n📋 参数差异分析:\n';
+                    output += '─'.repeat(50) + '\n';
+                    output += paramDiffs + '\n';
+                }
+                
+                // 安全影响分析
+                output += '\n🔒 安全影响分析:\n';
+                output += '─'.repeat(50) + '\n';
+                
+                const securityImplications = [];
+                
+                // 协议差异
+                if (urlObj1.protocol !== urlObj2.protocol) {
+                    if (urlObj1.protocol === 'http:' && urlObj2.protocol === 'https:') {
+                        securityImplications.push('安全升级 (HTTP → HTTPS)');
+                    } else if (urlObj1.protocol === 'https:' && urlObj2.protocol === 'http:') {
+                        securityImplications.push('⚠️ 安全降级 (HTTPS → HTTP)');
+                    }
+                }
+                
+                // 主机差异
+                if (urlObj1.hostname !== urlObj2.hostname) {
+                    securityImplications.push('跨域请求 - 需要CORS验证');
+                }
+                
+                // 路径遍历检查
+                if (urlObj1.pathname.includes('..') || urlObj2.pathname.includes('..')) {
+                    securityImplications.push('⚠️ 可能的路径遍历');
+                }
+                
+                if (securityImplications.length > 0) {
+                    securityImplications.forEach(imp => output += `  • ${imp}\n`);
+                } else {
+                    output += '  ✅ 无明显安全影响\n';
+                }
+                
+                // 建议
+                output += '\n💡 建议:\n';
+                output += '─'.repeat(50) + '\n';
+                if (diffs.length > 3) {
+                    output += '1. 考虑URL标准化\n';
+                    output += '2. 实施版本控制策略\n';
+                    output += '3. 监控URL模式变化\n';
+                } else {
+                    output += '1. 差异较小，可考虑合并\n';
+                    output += '2. 确保向后兼容\n';
+                }
+                
+                result.textContent = output;
+                
+            } catch (e) {
+                result.textContent = '错误: ' + e.message;
+            }
+        }
+
+        // 辅助函数：分类差异类型
+        function classifyDiff(val1, val2) {
+            if (!val1 && val2) return '新增';
+            if (val1 && !val2) return '删除';
+            if (val1.length !== val2.length) return '长度变化';
+            if (val1.toLowerCase() === val2.toLowerCase()) return '大小写变化';
+            if (encodeURI(val1) === encodeURI(val2)) return '编码差异';
+            return '内容变化';
+        }
+
+        // 辅助函数：检测API版本
+        function detectAPIVersion(path1, path2) {
+            const versionPattern = /\/v(\d+)\//g;
+            const match1 = path1.match(versionPattern);
+            const match2 = path2.match(versionPattern);
+            
+            if (match1 && match2 && match1[0] !== match2[0]) {
+                return `API版本变化: ${match1[0]} → ${match2[0]}`;
+            }
+            return null;
+        }
+
+        // 辅助函数：分析参数差异
+        function analyzeParams(search1, search2) {
+            const params1 = new URLSearchParams(search1);
+            const params2 = new URLSearchParams(search2);
+            
+            const added = [];
+            const removed = [];
+            const changed = [];
+            
+            // 检查新增参数
+            for (const [key, val2] of params2) {
+                if (!params1.has(key)) {
+                    added.push(`${key}=${val2}`);
+                }
+            }
+            
+            // 检查删除的参数
+            for (const [key, val1] of params1) {
+                if (!params2.has(key)) {
+                    removed.push(`${key}=${val1}`);
+                }
+            }
+            
+            // 检查变化的参数
+            for (const [key, val1] of params1) {
+                const val2 = params2.get(key);
+                if (val2 !== null && val1 !== val2) {
+                    changed.push(`${key}: ${val1} → ${val2}`);
+                }
+            }
+            
+            let result = '';
+            if (added.length > 0) result += `新增参数: ${added.join(', ')}\n`;
+            if (removed.length > 0) result += `删除参数: ${removed.join(', ')}\n`;
+            if (changed.length > 0) result += `变化参数: ${changed.join(', ')}\n`;
+            
+            return result || null;
+        }
+
+        // 页面加载时初始化
+        window.onload = function() {
+            document.getElementById('masterUrl').focus();
+        };
+    </script>
+</body>
+</html>

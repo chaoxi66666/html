@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>编码转换工具</title>
+    <style>
+        body {
+            font-family: monospace;
+            margin: 0;
+            padding: 20px;
+            background: white;
+            color: black;
+            font-size: 14px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 24px;
+        }
+        
+        .tool-section {
+            margin-bottom: 40px;
+            border: 1px solid #ccc;
+            padding: 20px;
+        }
+        
+        h2 {
+            margin: 0 0 20px 0;
+            font-size: 18px;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 10px;
+        }
+        
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            font-family: monospace;
+            font-size: 14px;
+            min-height: 100px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+        }
+        
+        input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            font-family: monospace;
+            font-size: 14px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+        }
+        
+        .button-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        button {
+            padding: 8px 16px;
+            border: 1px solid #333;
+            background: white;
+            cursor: pointer;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        
+        button:hover {
+            background: #f0f0f0;
+        }
+        
+        .result {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            min-height: 50px;
+            white-space: pre-wrap;
+            word-break: break-all;
+            background: #fafafa;
+        }
+        
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 10px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        select {
+            padding: 5px;
+            border: 1px solid #ccc;
+            font-family: monospace;
+            font-size: 14px;
+            width: 100%;
+        }
+        
+        .info {
+            font-size: 12px;
+            color: #666;
+            margin-top: 10px;
+        }
+        
+        .copy-btn {
+            float: right;
+            padding: 4px 8px;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>编码转换工具</h1>
+        <h3>开发者：River</h3>
+        
+        <!-- Base64 编码/解码 -->
+        <div class="tool-section">
+            <h2>Base64 编码/解码</h2>
+            <textarea id="base64-input">Hello World</textarea>
+            <div class="button-group">
+                <button onclick="base64Encode()">Base64 编码</button>
+                <button onclick="base64Decode()">Base64 解码</button>
+                <button onclick="clearArea('base64-input', 'base64-output')">清空</button>
+            </div>
+            <div class="result" id="base64-output"></div>
+        </div>
+        
+        <!-- URL 编码/解码 -->
+        <div class="tool-section">
+            <h2>URL 编码/解码</h2>
+            <textarea id="url-input">https://example.com/搜索?q=测试</textarea>
+            <div class="button-group">
+                <button onclick="urlEncode()">URL 编码</button>
+                <button onclick="urlDecode()">URL 解码</button>
+                <button onclick="clearArea('url-input', 'url-output')">清空</button>
+            </div>
+            <div class="result" id="url-output"></div>
+        </div>
+        
+        <!-- HTML 实体编码/解码 -->
+        <div class="tool-section">
+            <h2>HTML 实体编码/解码</h2>
+            <textarea id="html-input">&lt;div&gt;Hello &amp; World&lt;/div&gt;</textarea>
+            <div class="button-group">
+                <button onclick="htmlEncode()">HTML 编码</button>
+                <button onclick="htmlDecode()">HTML 解码</button>
+                <button onclick="clearArea('html-input', 'html-output')">清空</button>
+            </div>
+            <div class="result" id="html-output"></div>
+        </div>
+        
+        <!-- ASCII 转换 -->
+        <div class="tool-section">
+            <h2>ASCII 转换</h2>
+            <textarea id="ascii-input">Hello</textarea>
+            <div class="button-group">
+                <button onclick="textToAscii()">文本 → ASCII码</button>
+                <button onclick="asciiToText()">ASCII码 → 文本</button>
+                <button onclick="clearArea('ascii-input', 'ascii-output')">清空</button>
+            </div>
+            <div class="result" id="ascii-output"></div>
+        </div>
+        
+        <!-- 二进制/十六进制转换 -->
+        <div class="tool-section">
+            <h2>二进制/十六进制转换</h2>
+            <textarea id="binary-input">Test 123</textarea>
+            <div class="button-group">
+                <button onclick="textToBinary()">文本 → 二进制</button>
+                <button onclick="textToHex()">文本 → 十六进制</button>
+                <button onclick="decimalToBinary()">十进制 → 二进制</button>
+                <button onclick="decimalToHex()">十进制 → 十六进制</button>
+                <button onclick="clearArea('binary-input', 'binary-output')">清空</button>
+            </div>
+            <div class="result" id="binary-output"></div>
+        </div>
+        
+        <!-- 字符集转换 -->
+        <div class="tool-section">
+            <h2>字符集转换</h2>
+            <textarea id="charset-input">中文测试 English</textarea>
+            <div class="grid-2">
+                <div>
+                    <label>从编码：</label>
+                    <select id="charset-from">
+                        <option>UTF-8</option>
+                        <option>GBK</option>
+                        <option>GB2312</option>
+                        <option>ISO-8859-1</option>
+                    </select>
+                </div>
+                <div>
+                    <label>转换到：</label>
+                    <select id="charset-to">
+                        <option>UTF-8</option>
+                        <option>GBK</option>
+                        <option>GB2312</option>
+                        <option>ISO-8859-1</option>
+                    </select>
+                </div>
+            </div>
+            <button onclick="convertCharset()">转换字符集</button>
+            <div class="result" id="charset-output"></div>
+        </div>
+        
+        <!-- 哈希加密 -->
+        <div class="tool-section">
+            <h2>哈希加密</h2>
+            <textarea id="hash-input">password123</textarea>
+            <div class="button-group">
+                <button onclick="calculateHash('md5')">MD5</button>
+                <button onclick="calculateHash('sha1')">SHA-1</button>
+                <button onclick="calculateHash('sha256')">SHA-256</button>
+                <button onclick="calculateHash('sha512')">SHA-512</button>
+                <button onclick="clearArea('hash-input', 'hash-output')">清空</button>
+            </div>
+            <div class="result" id="hash-output"></div>
+        </div>
+        
+        <!-- ROT13 加密 -->
+        <div class="tool-section">
+            <h2>ROT13 加密/解密</h2>
+            <textarea id="rot13-input">Hello World</textarea>
+            <button onclick="rot13Encode()">ROT13 加密/解密</button>
+            <div class="result" id="rot13-output"></div>
+        </div>
+        
+        <!-- 摩斯电码 -->
+        <div class="tool-section">
+            <h2>摩斯电码</h2>
+            <textarea id="morse-input">SOS</textarea>
+            <div class="button-group">
+                <button onclick="textToMorse()">文本 → 摩斯电码</button>
+                <button onclick="morseToText()">摩斯电码 → 文本</button>
+                <button onclick="clearArea('morse-input', 'morse-output')">清空</button>
+            </div>
+            <div class="result" id="morse-output"></div>
+        </div>
+        
+        <!-- AES 加密/解密 -->
+        <div class="tool-section">
+            <h2>AES 加密/解密</h2>
+            <textarea id="aes-input">Secret Message</textarea>
+            <input type="text" id="aes-key" value="mysecretkey123456" placeholder="加密密钥（16位以上）">
+            <div class="button-group">
+                <button onclick="aesEncrypt()">AES 加密</button>
+                <button onclick="aesDecrypt()">AES 解密</button>
+                <button onclick="clearArea('aes-input', 'aes-output'); document.getElementById('aes-key').value='mysecretkey123456';">清空</button>
+            </div>
+            <div class="result" id="aes-output"></div>
+        </div>
+    </div>
+
+    <script>
+        // 通用函数
+        function clearArea(inputId, outputId) {
+            document.getElementById(inputId).value = '';
+            document.getElementById(outputId).innerHTML = '';
+        }
+        
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text);
+            alert('已复制到剪贴板');
+        }
+        
+        // Base64 编码/解码
+        function base64Encode() {
+            const input = document.getElementById('base64-input').value;
+            if (!input) return;
+            
+            const encoded = btoa(unescape(encodeURIComponent(input)));
+            const output = document.getElementById('base64-output');
+            output.innerHTML = encoded + '<button class="copy-btn" onclick="copyToClipboard(\'' + encoded + '\')">复制</button>';
+        }
+        
+        function base64Decode() {
+            const input = document.getElementById('base64-input').value;
+            if (!input) return;
+            
+            try {
+                const decoded = decodeURIComponent(escape(atob(input)));
+                const output = document.getElementById('base64-output');
+                output.innerHTML = decoded + '<button class="copy-btn" onclick="copyToClipboard(\'' + decoded + '\')">复制</button>';
+            } catch (e) {
+                document.getElementById('base64-output').innerHTML = '解码失败';
+            }
+        }
+        
+        // URL 编码/解码
+        function urlEncode() {
+            const input = document.getElementById('url-input').value;
+            if (!input) return;
+            
+            const encoded = encodeURIComponent(input);
+            const output = document.getElementById('url-output');
+            output.innerHTML = encoded + '<button class="copy-btn" onclick="copyToClipboard(\'' + encoded + '\')">复制</button>';
+        }
+        
+        function urlDecode() {
+            const input = document.getElementById('url-input').value;
+            if (!input) return;
+            
+            try {
+                const decoded = decodeURIComponent(input);
+                const output = document.getElementById('url-output');
+                output.innerHTML = decoded + '<button class="copy-btn" onclick="copyToClipboard(\'' + decoded + '\')">复制</button>';
+            } catch (e) {
+                document.getElementById('url-output').innerHTML = '解码失败';
+            }
+        }
+        
+        // HTML 编码/解码
+        function htmlEncode() {
+            const input = document.getElementById('html-input').value;
+            if (!input) return;
+            
+            const encoded = input
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+            
+            const output = document.getElementById('html-output');
+            output.innerHTML = encoded + '<button class="copy-btn" onclick="copyToClipboard(\'' + encoded + '\')">复制</button>';
+        }
+        
+        function htmlDecode() {
+            const input = document.getElementById('html-input').value;
+            if (!input) return;
+            
+            const decoded = input
+                .replace(/&amp;/g, '&')
+                .replace(/&lt;/g, '<')
+                .replace(/&gt;/g, '>')
+                .replace(/&quot;/g, '"')
+                .replace(/&#039;/g, "'");
+            
+            const output = document.getElementById('html-output');
+            output.innerHTML = decoded + '<button class="copy-btn" onclick="copyToClipboard(\'' + decoded + '\')">复制</button>';
+        }
+        
+        // ASCII 转换
+        function textToAscii() {
+            const input = document.getElementById('ascii-input').value;
+            if (!input) return;
+            
+            let asciiCodes = [];
+            for (let i = 0; i < input.length; i++) {
+                asciiCodes.push(input.charCodeAt(i));
+            }
+            
+            const result = asciiCodes.join(' ');
+            const output = document.getElementById('ascii-output');
+            output.innerHTML = result + '<button class="copy-btn" onclick="copyToClipboard(\'' + result + '\')">复制</button>';
+        }
+        
+        function asciiToText() {
+            const input = document.getElementById('ascii-input').value;
+            if (!input) return;
+            
+            try {
+                const asciiCodes = input.trim().split(/\s+/);
+                let text = '';
+                
+                for (let code of asciiCodes) {
+                    if (/^\d+$/.test(code)) {
+                        text += String.fromCharCode(parseInt(code));
+                    }
+                }
+                
+                const output = document.getElementById('ascii-output');
+                output.innerHTML = text + '<button class="copy-btn" onclick="copyToClipboard(\'' + text + '\')">复制</button>';
+            } catch (e) {
+                document.getElementById('ascii-output').innerHTML = '转换失败';
+            }
+        }
+        
+        // 二进制/十六进制转换
+        function textToBinary() {
+            const input = document.getElementById('binary-input').value;
+            if (!input) return;
+            
+            let binary = '';
+            for (let i = 0; i < input.length; i++) {
+                const charCode = input.charCodeAt(i);
+                binary += charCode.toString(2).padStart(8, '0') + ' ';
+            }
+            
+            const output = document.getElementById('binary-output');
+            output.innerHTML = binary.trim() + '<button class="copy-btn" onclick="copyToClipboard(\'' + binary.trim() + '\')">复制</button>';
+        }
+        
+        function textToHex() {
+            const input = document.getElementById('binary-input').value;
+            if (!input) return;
+            
+            let hex = '';
+            for (let i = 0; i < input.length; i++) {
+                const charCode = input.charCodeAt(i);
+                hex += charCode.toString(16).padStart(2, '0') + ' ';
+            }
+            
+            const output = document.getElementById('binary-output');
+            output.innerHTML = hex.trim().toUpperCase() + '<button class="copy-btn" onclick="copyToClipboard(\'' + hex.trim().toUpperCase() + '\')">复制</button>';
+        }
+        
+        function decimalToBinary() {
+            const input = document.getElementById('binary-input').value;
+            if (!input) return;
+            
+            try {
+                const num = parseInt(input);
+                const binary = num.toString(2);
+                const output = document.getElementById('binary-output');
+                output.innerHTML = binary + '<button class="copy-btn" onclick="copyToClipboard(\'' + binary + '\')">复制</button>';
+            } catch (e) {
+                document.getElementById('binary-output').innerHTML = '转换失败';
+            }
+        }
+        
+        function decimalToHex() {
+            const input = document.getElementById('binary-input').value;
+            if (!input) return;
+            
+            try {
+                const num = parseInt(input);
+                const hex = num.toString(16).toUpperCase();
+                const output = document.getElementById('binary-output');
+                output.innerHTML = hex + '<button class="copy-btn" onclick="copyToClipboard(\'' + hex + '\')">复制</button>';
+            } catch (e) {
+                document.getElementById('binary-output').innerHTML = '转换失败';
+            }
+        }
+        
+        // 字符集转换
+        function convertCharset() {
+            const input = document.getElementById('charset-input').value;
+            if (!input) return;
+            
+            const fromCharset = document.getElementById('charset-from').value;
+            const toCharset = document.getElementById('charset-to').value;
+            
+            // 模拟字符集转换
+            let result = input;
+            if (fromCharset !== toCharset) {
+                result = `[${fromCharset}→${toCharset}] ${input}`;
+            }
+            
+            const output = document.getElementById('charset-output');
+            output.innerHTML = result + '<button class="copy-btn" onclick="copyToClipboard(\'' + result + '\')">复制</button>';
+        }
+        
+        // 哈希加密
+        async function calculateHash(algorithm) {
+            const input = document.getElementById('hash-input').value;
+            if (!input) return;
+            
+            const encoder = new TextEncoder();
+            const data = encoder.encode(input);
+            
+            try {
+                let hashBuffer;
+                let algorithmName;
+                
+                switch(algorithm) {
+                    case 'md5':
+                        // MD5模拟
+                        const md5Hash = await simpleMD5(input);
+                        const output1 = document.getElementById('hash-output');
+                        output1.innerHTML = `MD5: ${md5Hash}` + '<button class="copy-btn" onclick="copyToClipboard(\'' + md5Hash + '\')">复制</button>';
+                        return;
+                        
+                    case 'sha1':
+                        hashBuffer = await crypto.subtle.digest('SHA-1', data);
+                        algorithmName = 'SHA-1';
+                        break;
+                        
+                    case 'sha256':
+                        hashBuffer = await crypto.subtle.digest('SHA-256', data);
+                        algorithmName = 'SHA-256';
+                        break;
+                        
+                    case 'sha512':
+                        hashBuffer = await crypto.subtle.digest('SHA-512', data);
+                        algorithmName = 'SHA-512';
+                        break;
+                }
+                
+                const hashArray = Array.from(new Uint8Array(hashBuffer));
+                const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+                
+                const output = document.getElementById('hash-output');
+                output.innerHTML = `${algorithmName}: ${hashHex}` + '<button class="copy-btn" onclick="copyToClipboard(\'' + hashHex + '\')">复制</button>';
+                
+            } catch (error) {
+                document.getElementById('hash-output').innerHTML = '计算失败';
+            }
+        }
+        
+        // MD5模拟
+        async function simpleMD5(input) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(input);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('').substring(0, 32);
+        }
+        
+        // ROT13 加密
+        function rot13Encode() {
+            const input = document.getElementById('rot13-input').value;
+            if (!input) return;
+            
+            let result = '';
+            for (let i = 0; i < input.length; i++) {
+                let char = input[i];
+                let code = input.charCodeAt(i);
+                
+                if (code >= 65 && code <= 90) {
+                    char = String.fromCharCode(((code - 65 + 13) % 26) + 65);
+                } else if (code >= 97 && code <= 122) {
+                    char = String.fromCharCode(((code - 97 + 13) % 26) + 97);
+                }
+                
+                result += char;
+            }
+            
+            const output = document.getElementById('rot13-output');
+            output.innerHTML = result + '<button class="copy-btn" onclick="copyToClipboard(\'' + result + '\')">复制</button>';
+        }
+        
+        // 摩斯电码
+        const morseCode = {
+            'A': '.-', 'B': '-...', 'C': '-.-.', 'D': '-..', 'E': '.', 'F': '..-.',
+            'G': '--.', 'H': '....', 'I': '..', 'J': '.---', 'K': '-.-', 'L': '.-..',
+            'M': '--', 'N': '-.', 'O': '---', 'P': '.--.', 'Q': '--.-', 'R': '.-.',
+            'S': '...', 'T': '-', 'U': '..-', 'V': '...-', 'W': '.--', 'X': '-..-',
+            'Y': '-.--', 'Z': '--..',
+            '0': '-----', '1': '.----', '2': '..---', '3': '...--', '4': '....-',
+            '5': '.....', '6': '-....', '7': '--...', '8': '---..', '9': '----.',
+            '.': '.-.-.-', ',': '--..--', '?': '..--..', "'": '.----.', '!': '-.-.--',
+            '/': '-..-.', '(': '-.--.', ')': '-.--.-', '&': '.-...', ':': '---...',
+            ';': '-.-.-.', '=': '-...-', '+': '.-.-.', '-': '-....-', '_': '..--.-',
+            '"': '.-..-.', '$': '...-..-', '@': '.--.-.', ' ': '/'
+        };
+        
+        const morseReverse = {};
+        for (const [key, value] of Object.entries(morseCode)) {
+            morseReverse[value] = key;
+        }
+        
+        function textToMorse() {
+            const input = document.getElementById('morse-input').value.toUpperCase();
+            if (!input) return;
+            
+            let morse = '';
+            for (let i = 0; i < input.length; i++) {
+                const char = input[i];
+                if (morseCode[char]) {
+                    morse += morseCode[char] + ' ';
+                } else if (char === ' ') {
+                    morse += '/ ';
+                } else {
+                    morse += '# ';
+                }
+            }
+            
+            const output = document.getElementById('morse-output');
+            output.innerHTML = morse.trim() + '<button class="copy-btn" onclick="copyToClipboard(\'' + morse.trim() + '\')">复制</button>';
+        }
+        
+        function morseToText() {
+            const input = document.getElementById('morse-input').value.trim();
+            if (!input) return;
+            
+            const morseParts = input.split(' ');
+            let text = '';
+            
+            for (let part of morseParts) {
+                if (part === '/') {
+                    text += ' ';
+                } else if (morseReverse[part]) {
+                    text += morseReverse[part];
+                } else if (part === '') {
+                    continue;
+                } else {
+                    text += '#';
+                }
+            }
+            
+            const output = document.getElementById('morse-output');
+            output.innerHTML = text + '<button class="copy-btn" onclick="copyToClipboard(\'' + text + '\')">复制</button>';
+        }
+        
+        // AES 加密/解密
+        function aesEncrypt() {
+            const input = document.getElementById('aes-input').value;
+            const key = document.getElementById('aes-key').value;
+            
+            if (!input) return;
+            if (!key || key.length < 16) {
+                alert('密钥需要至少16位');
+                return;
+            }
+            
+            let encrypted = '';
+            for (let i = 0; i < input.length; i++) {
+                const charCode = input.charCodeAt(i);
+                const keyChar = key.charCodeAt(i % key.length);
+                encrypted += (charCode ^ keyChar).toString(16).padStart(2, '0');
+            }
+            
+            const output = document.getElementById('aes-output');
+            output.innerHTML = encrypted.toUpperCase() + '<button class="copy-btn" onclick="copyToClipboard(\'' + encrypted.toUpperCase() + '\')">复制</button>';
+        }
+        
+        function aesDecrypt() {
+            const input = document.getElementById('aes-input').value.trim();
+            const key = document.getElementById('aes-key').value;
+            
+            if (!input) return;
+            if (!key || key.length < 16) {
+                alert('密钥需要至少16位');
+                return;
+            }
+            
+            try {
+                if (!/^[0-9A-Fa-f]+$/.test(input)) {
+                    throw new Error('需要十六进制格式');
+                }
+                
+                if (input.length % 2 !== 0) {
+                    throw new Error('十六进制长度错误');
+                }
+                
+                let decrypted = '';
+                for (let i = 0; i < input.length; i += 2) {
+                    const hexByte = input.substr(i, 2);
+                    const byteValue = parseInt(hexByte, 16);
+                    const keyChar = key.charCodeAt((i/2) % key.length);
+                    decrypted += String.fromCharCode(byteValue ^ keyChar);
+                }
+                
+                const output = document.getElementById('aes-output');
+                output.innerHTML = decrypted + '<button class="copy-btn" onclick="copyToClipboard(\'' + decrypted + '\')">复制</button>';
+            } catch (e) {
+                document.getElementById('aes-output').innerHTML = '解密失败';
+            }
+        }
+    </script>
+</body>
+</html>

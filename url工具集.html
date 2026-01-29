@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL工具集</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        h1 { margin-bottom: 20px; color: #333; }
+        h2 { margin: 20px 0 10px 0; color: #555; }
+        .tool { margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid #eee; }
+        .input-area { margin-bottom: 10px; }
+        input, textarea { 
+            width: 100%; 
+            max-width: 600px;
+            padding: 8px; 
+            border: 1px solid #ccc; 
+            border-radius: 4px; 
+            font-size: 14px; 
+            margin-bottom: 10px;
+        }
+        textarea {
+            height: 100px;
+            font-family: monospace;
+        }
+        button { 
+            padding: 8px 15px; 
+            background: #007bff; 
+            color: white; 
+            border: none; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            font-size: 14px; 
+        }
+        button:hover { background: #0056b3; }
+        .result { 
+            margin-top: 10px; 
+            padding: 10px; 
+            border: 1px solid #ddd; 
+            border-radius: 4px; 
+            background: #f9f9f9; 
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-width: 600px;
+        }
+        .component {
+            margin: 5px 0;
+            padding: 5px;
+            background: #f0f0f0;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <h1>URL 工具集</h1>
+    <h2>开发者：River</h2>
+
+    <!-- 工具1: URL解析器 -->
+    <div class="tool">
+        <h2>URL解析器</h2>
+        <div class="input-area">
+            <input type="text" id="parseUrl" placeholder="输入URL进行解析" value="https://www.example.com:8080/path/to/page?name=value#section">
+            <button onclick="parseURL()">解析URL</button>
+        </div>
+        <div class="result" id="parseResult"></div>
+    </div>
+
+    <!-- 工具2: URL构建器 -->
+    <div class="tool">
+        <h2>URL构建器</h2>
+        <div class="input-area">
+            协议: <input type="text" id="buildProtocol" value="https" style="width: 100px;">
+            域名: <input type="text" id="buildHost" value="example.com" style="width: 200px;">
+            端口: <input type="text" id="buildPort" value="" style="width: 80px;" placeholder="可选">
+            <br>路径: <input type="text" id="buildPath" value="/path/to/page" style="width: 300px;">
+            <br>查询参数 (每行一个 key=value):
+            <textarea id="buildParams">name=value
+page=1
+sort=desc</textarea>
+            <br>片段: <input type="text" id="buildHash" value="" style="width: 200px;" placeholder="#section">
+            <br><button onclick="buildURL()">构建URL</button>
+        </div>
+        <div class="result" id="buildResult"></div>
+    </div>
+
+    <!-- 工具3: URL编码/解码 -->
+    <div class="tool">
+        <h2>URL编码/解码</h2>
+        <div class="input-area">
+            <textarea id="encodeText" placeholder="输入要编码或解码的内容">https://example.com/搜索?q=测试&page=1</textarea>
+            <br>
+            <button onclick="encodeURL()">URL编码</button>
+            <button onclick="decodeURL()">URL解码</button>
+            <button onclick="encodeComponent()">组件编码</button>
+            <button onclick="decodeComponent()">组件解码</button>
+        </div>
+        <div class="result" id="encodeResult"></div>
+    </div>
+
+    <!-- 工具4: 查询参数提取器 -->
+    <div class="tool">
+        <h2>查询参数提取器</h2>
+        <div class="input-area">
+            <input type="text" id="queryUrl" placeholder="输入带查询参数的URL" value="https://example.com/search?q=hello&page=1&sort=desc&filter[]=a&filter[]=b">
+            <button onclick="extractQuery()">提取参数</button>
+        </div>
+        <div class="result" id="queryResult"></div>
+    </div>
+
+    <!-- 工具5: URL比较器 -->
+    <div class="tool">
+        <h2>URL比较器</h2>
+        <div class="input-area">
+            URL1: <input type="text" id="compareUrl1" value="https://example.com/page?q=test" style="width: 100%; max-width: 600px;">
+            URL2: <input type="text" id="compareUrl2" value="https://example.com/page?q=test#section" style="width: 100%; max-width: 600px;">
+            <button onclick="compareURLs()">比较URL</button>
+        </div>
+        <div class="result" id="compareResult"></div>
+    </div>
+
+    <!-- 工具6: URL缩短/还原 -->
+    <div class="tool">
+        <h2>URL缩短/还原</h2>
+        <div class="input-area">
+            <input type="text" id="shortenUrl" placeholder="输入要缩短的URL" value="https://www.example.com/very/long/path/to/some/specific/page/with/many/parameters?query1=value1&query2=value2&query3=value3">
+            <br>
+            <button onclick="shortenURL()">缩短URL</button>
+            <button onclick="expandURL()">还原URL</button>
+        </div>
+        <div class="result" id="shortenResult"></div>
+    </div>
+
+    <!-- 工具7: URL验证器 -->
+    <div class="tool">
+        <h2>URL验证器</h2>
+        <div class="input-area">
+            <input type="text" id="validateUrl" placeholder="输入要验证的URL" value="https://example.com">
+            <button onclick="validateURL()">验证URL</button>
+        </div>
+        <div class="result" id="validateResult"></div>
+    </div>
+
+    <!-- 工具8: 批量URL处理器 -->
+    <div class="tool">
+        <h2>批量URL处理器</h2>
+        <div class="input-area">
+            <textarea id="batchUrls" placeholder="每行一个URL">https://example.com/page1
+https://example.com/page2?q=test
+http://test.com:8080/api
+not-a-valid-url
+ftp://files.com/download</textarea>
+            <br>
+            <button onclick="processBatch()">处理URL列表</button>
+        </div>
+        <div class="result" id="batchResult"></div>
+    </div>
+
+    <script>
+        // 工具1: URL解析器
+        function parseURL() {
+            const url = document.getElementById('parseUrl').value;
+            const result = document.getElementById('parseResult');
+            
+            try {
+                const urlObj = new URL(url);
+                let output = '';
+                
+                for (const key in urlObj) {
+                    if (typeof urlObj[key] === 'string' && urlObj[key]) {
+                        output += `${key}: ${urlObj[key]}\n`;
+                    }
+                }
+                
+                output += '\n各组成部分:\n';
+                output += `完整URL: ${urlObj.href}\n`;
+                output += `协议: ${urlObj.protocol}\n`;
+                output += `主机: ${urlObj.host}\n`;
+                output += `主机名: ${urlObj.hostname}\n`;
+                output += `端口: ${urlObj.port}\n`;
+                output += `路径: ${urlObj.pathname}\n`;
+                output += `查询: ${urlObj.search}\n`;
+                output += `片段: ${urlObj.hash}\n`;
+                output += `来源: ${urlObj.origin}\n`;
+                
+                result.textContent = output;
+            } catch (e) {
+                result.textContent = '错误: ' + e.message;
+            }
+        }
+
+        // 工具2: URL构建器
+        function buildURL() {
+            const protocol = document.getElementById('buildProtocol').value;
+            const host = document.getElementById('buildHost').value;
+            const port = document.getElementById('buildPort').value;
+            const path = document.getElementById('buildPath').value;
+            const paramsText = document.getElementById('buildParams').value;
+            const hash = document.getElementById('buildHash').value;
+            
+            try {
+                let url = protocol + '://' + host;
+                if (port) url += ':' + port;
+                if (path && !path.startsWith('/')) url += '/' + path;
+                else if (path) url += path;
+                
+                // 处理查询参数
+                const params = [];
+                const lines = paramsText.split('\n');
+                for (const line of lines) {
+                    const trimmed = line.trim();
+                    if (trimmed && trimmed.includes('=')) {
+                        params.push(trimmed);
+                    }
+                }
+                
+                if (params.length > 0) {
+                    url += '?' + params.join('&');
+                }
+                
+                if (hash) {
+                    if (!hash.startsWith('#')) url += '#' + hash;
+                    else url += hash;
+                }
+                
+                document.getElementById('buildResult').textContent = url;
+                
+                // 验证构建的URL
+                new URL(url);
+                document.getElementById('buildResult').innerHTML += '\n\n✅ URL有效';
+            } catch (e) {
+                document.getElementById('buildResult').textContent = '错误: ' + e.message;
+            }
+        }
+
+        // 工具3: URL编码/解码
+        function encodeURL() {
+            const text = document.getElementById('encodeText').value;
+            document.getElementById('encodeResult').textContent = encodeURI(text);
+        }
+        
+        function decodeURL() {
+            const text = document.getElementById('encodeText').value;
+            document.getElementById('encodeResult').textContent = decodeURI(text);
+        }
+        
+        function encodeComponent() {
+            const text = document.getElementById('encodeText').value;
+            document.getElementById('encodeResult').textContent = encodeURIComponent(text);
+        }
+        
+        function decodeComponent() {
+            const text = document.getElementById('encodeText').value;
+            document.getElementById('encodeResult').textContent = decodeURIComponent(text);
+        }
+
+        // 工具4: 查询参数提取器
+        function extractQuery() {
+            const url = document.getElementById('queryUrl').value;
+            const result = document.getElementById('queryResult');
+            
+            try {
+                const urlObj = new URL(url);
+                const params = new URLSearchParams(urlObj.search);
+                
+                let output = '查询参数列表:\n';
+                let count = 0;
+                
+                for (const [key, value] of params) {
+                    output += `  ${key}: ${value}\n`;
+                    count++;
+                }
+                
+                output += `\n参数数量: ${count}\n`;
+                output += `查询字符串: ${urlObj.search}\n`;
+                
+                // 处理数组参数
+                if (url.includes('[]')) {
+                    output += '\n注意: 检测到数组参数语法';
+                }
+                
+                result.textContent = output;
+            } catch (e) {
+                result.textContent = '错误: ' + e.message;
+            }
+        }
+
+        // 工具5: URL比较器
+        function compareURLs() {
+            const url1 = document.getElementById('compareUrl1').value;
+            const url2 = document.getElementById('compareUrl2').value;
+            const result = document.getElementById('compareResult');
+            
+            try {
+                const urlObj1 = new URL(url1);
+                const urlObj2 = new URL(url2);
+                
+                let output = 'URL比较结果:\n\n';
+                output += `URL1: ${urlObj1.href}\n`;
+                output += `URL2: ${urlObj2.href}\n\n`;
+                
+                const compareFields = [
+                    'origin', 'protocol', 'hostname', 'port', 
+                    'pathname', 'search', 'hash'
+                ];
+                
+                let differences = [];
+                let similarities = [];
+                
+                for (const field of compareFields) {
+                    const val1 = urlObj1[field] || '(空)';
+                    const val2 = urlObj2[field] || '(空)';
+                    
+                    if (val1 === val2) {
+                        similarities.push(`${field}: ${val1}`);
+                    } else {
+                        differences.push(`${field}: URL1=${val1}, URL2=${val2}`);
+                    }
+                }
+                
+                if (differences.length === 0) {
+                    output += '✅ 两个URL完全相同\n';
+                } else {
+                    output += '⚠️ 检测到差异:\n';
+                    differences.forEach(diff => {
+                        output += `  - ${diff}\n`;
+                    });
+                    
+                    if (similarities.length > 0) {
+                        output += '\n✅ 相同部分:\n';
+                        similarities.forEach(sim => {
+                            output += `  - ${sim}\n`;
+                        });
+                    }
+                }
+                
+                // 检查是否同一站点
+                if (urlObj1.origin === urlObj2.origin) {
+                    output += '\n✅ 属于同一站点';
+                } else {
+                    output += '\n⚠️ 属于不同站点';
+                }
+                
+                result.textContent = output;
+            } catch (e) {
+                result.textContent = '错误: ' + e.message;
+            }
+        }
+
+        // 工具6: URL缩短/还原
+        function shortenURL() {
+            const url = document.getElementById('shortenUrl').value;
+            const result = document.getElementById('shortenResult');
+            
+            try {
+                // 简单的URL缩短算法
+                const urlObj = new URL(url);
+                const hash = btoa(url).replace(/[+/=]/g, '').substring(0, 8);
+                
+                // 创建缩短的URL
+                const shortUrl = `https://short.url/${hash}`;
+                
+                // 存储到本地存储以便还原
+                localStorage.setItem(`short_${hash}`, url);
+                
+                result.textContent = `原URL: ${url}\n\n缩短后: ${shortUrl}\n\n哈希: ${hash}\n\n(已保存到本地存储，可以还原)`;
+            } catch (e) {
+                result.textContent = '错误: ' + e.message;
+            }
+        }
+        
+        function expandURL() {
+            const input = document.getElementById('shortenUrl').value;
+            const result = document.getElementById('shortenResult');
+            
+            // 检查是否是缩短的URL格式
+            const match = input.match(/https:\/\/short\.url\/([a-zA-Z0-9]+)/);
+            
+            if (match) {
+                const hash = match[1];
+                const original = localStorage.getItem(`short_${hash}`);
+                
+                if (original) {
+                    result.textContent = `缩短URL: ${input}\n\n原URL: ${original}`;
+                } else {
+                    result.textContent = '找不到对应的原URL';
+                }
+            } else {
+                result.textContent = '这不是一个缩短的URL，或者格式不正确';
+            }
+        }
+
+        // 工具7: URL验证器
+        function validateURL() {
+            const url = document.getElementById('validateUrl').value;
+            const result = document.getElementById('validateResult');
+            
+            try {
+                const urlObj = new URL(url);
+                let output = '✅ URL有效\n\n';
+                
+                output += `协议: ${urlObj.protocol}\n`;
+                output += `主机: ${urlObj.host}\n`;
+                output += `路径: ${urlObj.pathname}\n`;
+                
+                // 检查常见问题
+                const warnings = [];
+                
+                if (urlObj.protocol === 'http:') {
+                    warnings.push('使用HTTP协议，建议使用HTTPS');
+                }
+                
+                if (urlObj.hostname.includes('xn--')) {
+                    warnings.push('包含国际化域名(IDN)');
+                }
+                
+                if (url.includes(' ')) {
+                    warnings.push('URL中包含空格');
+                }
+                
+                if (urlObj.hostname.indexOf('.') === -1) {
+                    warnings.push('可能不是有效的域名');
+                }
+                
+                if (warnings.length > 0) {
+                    output += '\n⚠️ 警告:\n';
+                    warnings.forEach(warning => {
+                        output += `  - ${warning}\n`;
+                    });
+                }
+                
+                // 检查常见协议
+                const commonProtocols = ['http:', 'https:', 'ftp:', 'mailto:', 'tel:', 'file:'];
+                if (!commonProtocols.includes(urlObj.protocol)) {
+                    output += `\n⚠️ 非常用协议: ${urlObj.protocol}`;
+                }
+                
+                result.textContent = output;
+            } catch (e) {
+                result.textContent = '❌ URL无效: ' + e.message;
+            }
+        }
+
+        // 工具8: 批量URL处理器
+        function processBatch() {
+            const urlsText = document.getElementById('batchUrls').value;
+            const result = document.getElementById('batchResult');
+            
+            const lines = urlsText.split('\n');
+            let output = `处理 ${lines.length} 个URL:\n\n`;
+            
+            const results = {
+                valid: [],
+                invalid: [],
+                http: [],
+                https: [],
+                other: []
+            };
+            
+            lines.forEach((line, index) => {
+                const url = line.trim();
+                if (!url) return;
+                
+                try {
+                    const urlObj = new URL(url);
+                    
+                    results.valid.push(url);
+                    output += `${index + 1}. ✅ ${url}\n`;
+                    
+                    if (urlObj.protocol === 'http:') {
+                        results.http.push(url);
+                    } else if (urlObj.protocol === 'https:') {
+                        results.https.push(url);
+                    } else {
+                        results.other.push(url);
+                    }
+                    
+                } catch (e) {
+                    results.invalid.push(url);
+                    output += `${index + 1}. ❌ ${url} (${e.message})\n`;
+                }
+            });
+            
+            output += '\n统计:\n';
+            output += `有效URL: ${results.valid.length}\n`;
+            output += `无效URL: ${results.invalid.length}\n`;
+            output += `HTTP: ${results.http.length}\n`;
+            output += `HTTPS: ${results.https.length}\n`;
+            output += `其他协议: ${results.other.length}\n`;
+            
+            if (results.invalid.length > 0) {
+                output += '\n无效URL列表:\n';
+                results.invalid.forEach(url => {
+                    output += `  - ${url}\n`;
+                });
+            }
+            
+            result.textContent = output;
+        }
+
+        // 页面加载时解析示例URL
+        window.onload = function() {
+            parseURL();
+            buildURL();
+            extractQuery();
+            compareURLs();
+            validateURL();
+        };
+    </script>
+</body>
+</html>

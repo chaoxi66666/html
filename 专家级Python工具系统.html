@@ -1,0 +1,2235 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>专家级Python工具系统</title>
+    <style>
+        body { 
+            font-family: 'Consolas', 'Monaco', monospace; 
+            margin: 0;
+            padding: 20px;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            font-size: 13px;
+        }
+        h1, h2 { 
+            margin: 15px 0 10px 0; 
+            color: #569cd6;
+            border-bottom: 1px solid #3e3e42;
+            padding-bottom: 5px;
+        }
+        h1 { 
+            color: #d7ba7d; 
+            text-align: center;
+            margin-top: 0;
+        }
+        .container {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 20px;
+            height: calc(100vh - 40px);
+        }
+        .sidebar {
+            background: #252526;
+            border: 1px solid #3e3e42;
+            border-radius: 5px;
+            padding: 15px;
+            overflow-y: auto;
+        }
+        .main-content {
+            background: #1e1e1e;
+            border: 1px solid #3e3e42;
+            border-radius: 5px;
+            padding: 15px;
+            overflow-y: auto;
+        }
+        .tool-category {
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #3e3e42;
+        }
+        .tool-item {
+            padding: 8px 12px;
+            margin: 5px 0;
+            background: #2d2d30;
+            border: 1px solid #3e3e42;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #d4d4d4;
+        }
+        .tool-item:hover {
+            background: #3e3e42;
+            border-color: #007acc;
+        }
+        .tool-item.active {
+            background: #0e639c;
+            border-color: #007acc;
+        }
+        .tool-section {
+            display: none;
+        }
+        .tool-section.active {
+            display: block;
+        }
+        textarea, input, select {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0 15px 0;
+            background: #252526;
+            border: 1px solid #3e3e42;
+            color: #d4d4d4;
+            border-radius: 3px;
+            font-family: inherit;
+            font-size: 13px;
+        }
+        textarea {
+            min-height: 200px;
+            resize: vertical;
+        }
+        button {
+            background: #007acc;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 13px;
+            margin: 5px 5px 5px 0;
+            transition: background 0.2s;
+        }
+        button:hover {
+            background: #106ebe;
+        }
+        button.secondary {
+            background: #4d4d4d;
+        }
+        button.secondary:hover {
+            background: #5d5d5d;
+        }
+        .code-editor {
+            background: #252526;
+            border: 1px solid #3e3e42;
+            border-radius: 3px;
+            padding: 10px;
+            font-family: 'Consolas', monospace;
+            font-size: 12px;
+            line-height: 1.4;
+            min-height: 300px;
+            max-height: 500px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            tab-size: 4;
+        }
+        .output {
+            background: #0c0c0c;
+            border: 1px solid #3e3e42;
+            border-radius: 3px;
+            padding: 15px;
+            font-family: 'Consolas', monospace;
+            font-size: 12px;
+            margin-top: 15px;
+            min-height: 200px;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        .error { color: #f44747; }
+        .warning { color: #ffcc00; }
+        .success { color: #6a9955; }
+        .info { color: #569cd6; }
+        .keyword { color: #c586c0; }
+        .string { color: #ce9178; }
+        .number { color: #b5cea8; }
+        .comment { color: #6a9955; }
+        .flex-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin: 10px 0;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        .status-running { background: #ffcc00; }
+        .status-success { background: #6a9955; }
+        .status-error { background: #f44747; }
+        .tool-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .tool-description {
+            color: #858585;
+            font-size: 12px;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .highlight {
+            background: rgba(86, 156, 214, 0.1);
+            border-left: 3px solid #569cd6;
+            padding: 10px;
+            margin: 10px 0;
+        }
+        .dependency-list {
+            background: #2d2d30;
+            border: 1px solid #3e3e42;
+            border-radius: 3px;
+            padding: 10px;
+            margin: 10px 0;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        .dependency-item {
+            padding: 5px;
+            border-bottom: 1px solid #3e3e42;
+            display: flex;
+            justify-content: space-between;
+        }
+        .dependency-item:last-child {
+            border-bottom: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>🐍 专家级Python工具系统</h1>
+    
+    <div class="container">
+        <!-- 侧边栏 -->
+        <div class="sidebar">
+            <div class="tool-category">
+                <h2>🔍 代码分析</h2>
+                <div class="tool-item active" onclick="showTool('ast-analyzer')">AST代码分析器</div>
+                <div class="tool-item" onclick="showTool('complexity-checker')">复杂度检查器</div>
+                <div class="tool-item" onclick="showTool('type-checker')">类型检查模拟器</div>
+                <div class="tool-item" onclick="showTool('security-scanner')">安全漏洞扫描器</div>
+            </div>
+            
+            <div class="tool-category">
+                <h2>⚡ 性能工具</h2>
+                <div class="tool-item" onclick="showTool('profiler')">性能分析器</div>
+                <div class="tool-item" onclick="showTool('memory-analyzer')">内存分析器</div>
+                <div class="tool-item" onclick="showTool('concurrency-checker')">并发安全检查</div>
+            </div>
+            
+            <div class="tool-category">
+                <h2>🛠️ 代码生成</h2>
+                <div class="tool-item" onclick="showTool('class-generator')">类生成器</div>
+                <div class="tool-item" onclick="showTool('api-generator')">API代码生成器</div>
+                <div class="tool-item" onclick="showTool('test-generator')">测试用例生成器</div>
+                <div class="tool-item" onclick="showTool('orm-generator')">ORM模型生成器</div>
+            </div>
+            
+            <div class="tool-category">
+                <h2>🔧 工具集</h2>
+                <div class="tool-item" onclick="showTool('dependency-analyzer')">依赖分析器</div>
+                <div class="tool-item" onclick="showTool('error-simulator')">错误模拟器</div>
+                <div class="tool-item" onclick="showTool('code-metrics')">代码度量工具</div>
+                <div class="tool-item" onclick="showTool('pattern-detector')">设计模式检测器</div>
+            </div>
+            
+            <div class="tool-category">
+                <h2>📊 优化工具</h2>
+                <div class="tool-item" onclick="showTool('performance-optimizer')">性能优化器</div>
+                <div class="tool-item" onclick="showTool('import-optimizer')">导入优化器</div>
+                <div class="tool-item" onclick="showTool('cache-optimizer')">缓存优化器</div>
+            </div>
+        </div>
+        
+        <!-- 主内容区 -->
+        <div class="main-content">
+            <!-- AST代码分析器 -->
+            <div id="ast-analyzer" class="tool-section active">
+                <div class="tool-header">
+                    <h2>🔍 AST代码分析器</h2>
+                    <button onclick="analyzeAST()">分析代码</button>
+                </div>
+                <div class="tool-description">
+                    使用Python的AST模块解析代码，检查语法结构，识别潜在问题，并提供重构建议。
+                </div>
+                <textarea id="ast-code" placeholder="输入Python代码进行AST分析...">
+def calculate_factorial(n: int) -> int:
+    """计算阶乘"""
+    if n < 0:
+        raise ValueError("阶乘不能为负数")
+    result = 1
+    for i in range(1, n + 1):
+        result *= i
+    return result
+
+def process_data(data: list) -> dict:
+    """处理数据并返回统计信息"""
+    if not data:
+        return {}
+    
+    stats = {
+        'count': len(data),
+        'sum': sum(data),
+        'mean': sum(data) / len(data) if data else 0,
+        'max': max(data) if data else 0
+    }
+    
+    # 潜在的错误：未处理异常情况
+    for item in data:
+        if item > 1000:
+            print(f"大数值: {item}")
+    
+    return stats
+
+# 复杂嵌套函数示例
+def complex_function(x, y):
+    def inner_func(a):
+        return a * 2
+    
+    if x > y:
+        return inner_func(x) + y
+    else:
+        return x - inner_func(y)</textarea>
+                <div class="output" id="ast-output"></div>
+            </div>
+            
+            <!-- 复杂度检查器 -->
+            <div id="complexity-checker" class="tool-section">
+                <div class="tool-header">
+                    <h2>⚙️ 代码复杂度检查器</h2>
+                    <button onclick="checkComplexity()">检查复杂度</button>
+                </div>
+                <div class="tool-description">
+                    计算圈复杂度、认知复杂度，识别过度复杂的代码段，并提供简化建议。
+                </div>
+                <textarea id="complexity-code" placeholder="输入Python代码进行复杂度分析...">
+class DataProcessor:
+    def __init__(self, config):
+        self.config = config
+        self.data = []
+        self.results = {}
+    
+    def process(self, input_data):
+        """过度复杂的方法示例"""
+        if not input_data:
+            return None
+        
+        # 多层嵌套条件判断
+        if isinstance(input_data, list):
+            if len(input_data) > 0:
+                for item in input_data:
+                    if isinstance(item, dict):
+                        for key, value in item.items():
+                            if key in self.config:
+                                if value is not None:
+                                    if isinstance(value, (int, float)):
+                                        if value > self.config[key]:
+                                            self.data.append(value)
+                                            if len(self.data) > 100:
+                                                return self.data
+                                    elif isinstance(value, str):
+                                        if len(value) > 10:
+                                            self.data.append(value)
+            else:
+                return []
+        elif isinstance(input_data, dict):
+            # 另一个复杂的条件分支
+            pass
+        
+        # 多层循环嵌套
+        for i in range(10):
+            for j in range(10):
+                for k in range(10):
+                    if i * j * k > 100:
+                        for m in range(5):
+                            if m % 2 == 0:
+                                print(i, j, k, m)
+        
+        return self.data
+    
+    def calculate_metrics(self, data):
+        """认知复杂度高的方法"""
+        try:
+            if data:
+                if len(data) > 0:
+                    result = []
+                    for item in data:
+                        if item:
+                            if isinstance(item, dict):
+                                for key, value in item.items():
+                                    if value:
+                                        if isinstance(value, list):
+                                            for subitem in value:
+                                                if subitem:
+                                                    result.append(subitem)
+                                        else:
+                                            result.append(value)
+                    return sum(result) if result else 0
+        except Exception as e:
+            print(f"错误: {e}")
+        return None</textarea>
+                <div class="output" id="complexity-output"></div>
+            </div>
+            
+            <!-- 类型检查模拟器 -->
+            <div id="type-checker" class="tool-section">
+                <div class="tool-header">
+                    <h2>🔬 类型检查模拟器</h2>
+                    <button onclick="checkTypes()">类型检查</button>
+                </div>
+                <div class="tool-description">
+                    模拟Python类型检查，识别类型错误、不一致的类型注解和潜在的运行时类型错误。
+                </div>
+                <div class="grid-2">
+                    <div>
+                        <textarea id="type-code" placeholder="输入带有类型注解的Python代码...">
+from typing import Optional, List, Dict, Union, Any
+import datetime
+
+def process_user_data(
+    user_id: int,
+    data: Dict[str, Any],
+    options: Optional[Dict] = None
+) -> Union[Dict, None]:
+    """处理用户数据"""
+    # 潜在的类型错误
+    result = {}
+    
+    if not data:
+        return None
+    
+    # 类型不一致
+    name = data.get("name", "")
+    age = data.get("age", "0")  # 应该是int，但默认为str
+    
+    # 错误的类型操作
+    if age > 18:  # 字符串和数字比较
+        result["adult"] = True
+    
+    # 类型转换问题
+    try:
+        registration_date = datetime.datetime.fromisoformat(
+            data.get("registered", "")
+        )
+    except ValueError:
+        registration_date = None
+    
+    # 返回类型不一致
+    if options and options.get("detailed"):
+        return {
+            "id": user_id,
+            "name": name,
+            "age": int(age) if age.isdigit() else 0,
+            "registered": registration_date
+        }
+    else:
+        return str(user_id)  # 应该返回Dict，但返回了str
+
+def calculate_stats(numbers: List[int]) -> Dict[str, float]:
+    """计算统计数据"""
+    if not numbers:
+        return {}  # 应该返回Dict[str, float]，但返回了空dict
+    
+    # 混合类型操作
+    total = sum(numbers)
+    count = len(numbers)
+    
+    # 潜在的类型问题
+    mean = total / count if count > 0 else 0.0
+    
+    return {
+        "total": total,
+        "count": count,
+        "mean": mean,
+        "max": max(numbers) if numbers else 0
+    }
+
+class DataProcessor:
+    def __init__(self, config: Dict[str, Any]):
+        self.config = config
+        self.cache: Dict[int, Any] = {}
+    
+    def process(self, data: Any) -> Any:
+        """处理数据"""
+        # 过于宽泛的类型注解
+        if isinstance(data, list):
+            return [self.process(item) for item in data]
+        elif isinstance(data, dict):
+            return {k: self.process(v) for k, v in data.items()}
+        else:
+            return str(data)  # 任意类型转换为字符串</textarea>
+                    </div>
+                    <div>
+                        <div class="output" id="type-output"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 安全漏洞扫描器 -->
+            <div id="security-scanner" class="tool-section">
+                <div class="tool-header">
+                    <h2>🛡️ 安全漏洞扫描器</h2>
+                    <button onclick="scanSecurity()">扫描安全漏洞</button>
+                </div>
+                <div class="tool-description">
+                    检测常见安全漏洞：SQL注入、命令注入、XSS、文件操作漏洞、硬编码凭证等。
+                </div>
+                <textarea id="security-code" placeholder="输入Python代码进行安全扫描...">
+import os
+import subprocess
+import sqlite3
+from flask import Flask, request, render_template_string
+
+app = Flask(__name__)
+
+# 硬编码凭证
+DATABASE_PASSWORD = "supersecret123"
+API_KEY = "1234567890abcdef"
+
+# SQL注入漏洞
+def get_user_data(user_id):
+    conn = sqlite3.connect('database.db')
+    cursor = conn.cursor()
+    
+    # 危险的SQL拼接
+    query = f"SELECT * FROM users WHERE id = {user_id}"
+    cursor.execute(query)  # SQL注入风险！
+    
+    # 另一个有风险的查询
+    username = request.args.get('username')
+    query2 = "SELECT * FROM users WHERE username = '%s'" % username
+    cursor.execute(query2)
+    
+    return cursor.fetchall()
+
+# 命令注入漏洞
+def execute_system_command(command):
+    # 直接执行用户输入的命令
+    result = os.system(command)  # 命令注入风险！
+    return result
+
+def run_backup(backup_name):
+    # 使用shell=True且未清理输入
+    cmd = f"tar -czf /backups/{backup_name}.tar.gz /data"
+    subprocess.run(cmd, shell=True)  # 命令注入风险！
+    return True
+
+# 路径遍历漏洞
+def read_file(filename):
+    # 未验证的文件路径
+    with open(f"/data/{filename}", "r") as f:  # 路径遍历风险！
+        return f.read()
+
+# XSS漏洞
+@app.route('/search')
+def search():
+    query = request.args.get('q', '')
+    # 未转义的用户输入
+    html = f"<h1>搜索结果: {query}</h1>"
+    return render_template_string(html)  # XSS风险！
+
+# 反序列化漏洞
+import pickle
+import json
+
+def load_config(config_data):
+    # 不安全的反序列化
+    config = pickle.loads(config_data)  # 反序列化风险！
+    return config
+
+def load_json_data(json_str):
+    # 使用有风险的对象钩子
+    data = json.loads(json_str, object_hook=lambda d: type('X', (object,), d)())
+    return data
+
+# 不安全的随机数
+import random
+
+def generate_token():
+    # 使用不安全的随机数生成器
+    token = random.randint(100000, 999999)  # 密码学上不安全的随机数！
+    return str(token)
+
+# 硬编码密钥
+SECRET_KEY = b'this_is_a_very_secret_key'  # 硬编码密钥！
+
+# 信息泄露
+def debug_info():
+    # 生产环境不应暴露调试信息
+    import sys
+    debug_data = {
+        'python_version': sys.version,
+        'path': sys.path,
+        'modules': list(sys.modules.keys())
+    }
+    return str(debug_data)  # 信息泄露风险！</textarea>
+                <div class="output" id="security-output"></div>
+            </div>
+            
+            <!-- 性能分析器 -->
+            <div id="profiler" class="tool-section">
+                <div class="tool-header">
+                    <h2>⚡ 性能分析器</h2>
+                    <button onclick="analyzePerformance()">分析性能</button>
+                </div>
+                <div class="tool-description">
+                    模拟代码性能分析，识别性能瓶颈，提供优化建议。
+                </div>
+                <textarea id="performance-code" placeholder="输入Python代码进行性能分析...">
+import time
+from functools import lru_cache
+
+# 性能问题示例
+def inefficient_fibonacci(n):
+    """低效的斐波那契数列实现"""
+    if n <= 1:
+        return n
+    return inefficient_fibonacci(n-1) + inefficient_fibonacci(n-2)
+
+def process_large_list(data):
+    """处理大列表的性能问题"""
+    result = []
+    
+    # 低效的循环
+    for i in range(len(data)):
+        for j in range(len(data)):
+            if data[i] == data[j] and i != j:
+                result.append((i, j))
+    
+    # 不必要的重复计算
+    squares = []
+    for item in data:
+        squares.append(item ** 2)
+    
+    cubes = []
+    for item in data:
+        cubes.append(item ** 3)
+    
+    return result, squares, cubes
+
+def string_concatenation_example(items):
+    """字符串拼接的性能问题"""
+    result = ""
+    for item in items:
+        result += str(item)  # 低效的字符串拼接
+    return result
+
+def database_query_simulation(n):
+    """模拟数据库查询的N+1问题"""
+    results = []
+    for i in range(n):
+        # 模拟单独的查询（N+1问题）
+        time.sleep(0.01)  # 模拟查询延迟
+        results.append(f"Result {i}")
+    return results
+
+# 优化版本示例
+@lru_cache(maxsize=128)
+def efficient_fibonacci(n):
+    """使用缓存优化的斐波那契数列"""
+    if n <= 1:
+        return n
+    return efficient_fibonacci(n-1) + efficient_fibonacci(n-2)
+
+def optimized_process(data):
+    """优化的列表处理"""
+    # 使用集合提高查找效率
+    seen = set()
+    duplicates = []
+    
+    for i, item in enumerate(data):
+        if item in seen:
+            duplicates.append(i)
+        seen.add(item)
+    
+    # 使用列表推导式
+    squares = [x ** 2 for x in data]
+    cubes = [x ** 3 for x in data]
+    
+    return duplicates, squares, cubes
+
+def efficient_string_join(items):
+    """高效的字符串拼接"""
+    return "".join(str(item) for item in items)
+
+class DataProcessor:
+    def __init__(self):
+        self.cache = {}
+    
+    def heavy_computation(self, x):
+        """重计算函数"""
+        if x in self.cache:
+            return self.cache[x]
+        
+        # 模拟重计算
+        result = sum(i * x for i in range(10000))
+        self.cache[x] = result
+        return result</textarea>
+                <div class="output" id="performance-output"></div>
+            </div>
+            
+            <!-- 类生成器 -->
+            <div id="class-generator" class="tool-section">
+                <div class="tool-header">
+                    <h2>🏗️ 类生成器</h2>
+                    <button onclick="generateClass()">生成类</button>
+                </div>
+                <div class="tool-description">
+                    根据需求自动生成Python类，包括属性、方法、类型注解、文档字符串等。
+                </div>
+                <div class="grid-2">
+                    <div>
+                        <h3>类配置</h3>
+                        <input type="text" id="class-name" placeholder="类名" value="User">
+                        <textarea id="class-properties" placeholder="属性配置 (每行: name:type=default)">
+name:str
+age:int=0
+email:Optional[str]=None
+is_active:bool=True
+permissions:List[str]=None</textarea>
+                        <textarea id="class-methods" placeholder="方法配置 (每行: name:return_type:description)">
+get_full_info:dict:获取用户完整信息
+activate:bool:激活用户账户
+add_permission:None:添加权限
+validate_email:bool:验证邮箱格式</textarea>
+                        <select id="class-features">
+                            <option value="basic">基础类</option>
+                            <option value="dataclass">数据类</option>
+                            <option value="pydantic">Pydantic模型</option>
+                            <option value="full">完整类（包含魔术方法）</option>
+                        </select>
+                    </div>
+                    <div>
+                        <div class="output" id="class-output"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- API代码生成器 -->
+            <div id="api-generator" class="tool-section">
+                <div class="tool-header">
+                    <h2>🌐 API代码生成器</h2>
+                    <button onclick="generateAPI()">生成API代码</button>
+                </div>
+                <div class="tool-description">
+                    根据OpenAPI规范或简单配置生成FastAPI/Flask API代码。
+                </div>
+                <div class="grid-2">
+                    <div>
+                        <h3>API配置</h3>
+                        <select id="api-framework">
+                            <option value="fastapi">FastAPI</option>
+                            <option value="flask">Flask</option>
+                        </select>
+                        <textarea id="api-endpoints" placeholder="端点配置 (JSON格式)">
+[
+    {
+        "path": "/users",
+        "methods": ["GET", "POST"],
+        "summary": "用户管理",
+        "params": [
+            {"name": "user_id", "type": "int", "required": false, "location": "query"},
+            {"name": "user_data", "type": "UserCreate", "required": true, "location": "body"}
+        ],
+        "responses": {
+            "200": {"description": "成功", "type": "List[User]"},
+            "201": {"description": "创建成功", "type": "User"}
+        }
+    },
+    {
+        "path": "/users/{user_id}",
+        "methods": ["GET", "PUT", "DELETE"],
+        "summary": "用户操作",
+        "params": [
+            {"name": "user_id", "type": "int", "required": true, "location": "path"}
+        ],
+        "responses": {
+            "200": {"description": "成功", "type": "User"},
+            "404": {"description": "用户不存在"}
+        }
+    }
+]</textarea>
+                        <textarea id="api-models" placeholder="数据模型 (每行一个模型)">
+UserCreate:name:str,email:str,password:str,age:Optional[int]=None
+UserResponse:user_id:int,name:str,email:str,age:Optional[int],created_at:datetime
+ErrorResponse:detail:str,code:int,timestamp:datetime</textarea>
+                    </div>
+                    <div>
+                        <div class="output" id="api-output"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 依赖分析器 -->
+            <div id="dependency-analyzer" class="tool-section">
+                <div class="tool-header">
+                    <h2>📦 依赖分析器</h2>
+                    <button onclick="analyzeDependencies()">分析依赖</button>
+                </div>
+                <div class="tool-description">
+                    分析Python代码的导入依赖关系，检测循环导入、未使用导入、版本冲突等问题。
+                </div>
+                <textarea id="dependency-code" placeholder="输入包含导入的Python代码...">
+import os
+import sys
+from typing import List, Dict, Optional, Union
+import datetime
+from datetime import timedelta
+import json
+import csv
+import re
+import math
+from collections import defaultdict, Counter
+import itertools
+from functools import lru_cache, wraps
+
+# 未使用的导入
+import random  # 未使用
+import string  # 未使用
+
+# 循环导入风险示例
+# from models import User  # 可能导致循环导入
+# from services.user_service import get_user
+
+# 模糊导入
+from utils import *  # 应该避免的模糊导入
+
+# 相对导入（模拟）
+# from .config import settings
+# from ..database import connection
+
+import requests
+import numpy as np
+import pandas as pd
+from sqlalchemy import create_engine, Column, Integer, String
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+
+# 版本冲突风险的导入
+import tensorflow as tf  # 可能需要特定版本
+import torch
+
+# 过时的导入
+import md5  # Python 2的模块，Python 3中已移除
+import urllib2  # Python 2的模块
+
+# 标准库中的重复导入
+import datetime  # 已导入
+from time import time, sleep
+
+# 第三方库的版本检查
+try:
+    import django
+    DJANGO_VERSION = django.get_version()
+except ImportError:
+    DJANGO_VERSION = None
+
+# 条件导入
+if sys.platform == "win32":
+    import winreg  # Windows特定
+else:
+    import pwd  # Unix特定
+
+# 别名导入
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+class DataProcessor:
+    def __init__(self):
+        self.engine = None
+    
+    def setup_database(self):
+        """设置数据库连接"""
+        from sqlalchemy import MetaData  # 局部导入
+        from sqlalchemy.orm import scoped_session
+        
+        # 动态导入
+        import config
+        self.engine = create_engine(config.DATABASE_URL)</textarea>
+                <div class="output" id="dependency-output"></div>
+            </div>
+            
+            <!-- 错误模拟器 -->
+            <div id="error-simulator" class="tool-section">
+                <div class="tool-header">
+                    <h2>⚠️ 错误模拟器</h2>
+                    <select id="error-type">
+                        <option value="syntax">语法错误</option>
+                        <option value="type">类型错误</option>
+                        <option value="import">导入错误</option>
+                        <option value="attribute">属性错误</option>
+                        <option value="key">键错误</option>
+                        <option value="index">索引错误</option>
+                        <option value="value">值错误</option>
+                        <option value="name">名称错误</option>
+                        <option value="recursion">递归错误</option>
+                        <option value="memory">内存错误</option>
+                        <option value="all">所有常见错误</option>
+                    </select>
+                    <button onclick="simulateError()">模拟错误</button>
+                </div>
+                <div class="tool-description">
+                    生成包含特定错误的Python代码，帮助学习和调试常见Python错误。
+                </div>
+                <div class="output" id="error-output"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 工具切换
+        function showTool(toolId) {
+            document.querySelectorAll('.tool-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            document.querySelectorAll('.tool-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            document.getElementById(toolId).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // AST代码分析器
+        function analyzeAST() {
+            const code = document.getElementById('ast-code').value;
+            const output = document.getElementById('ast-output');
+            
+            let result = "🔍 AST分析报告\n\n";
+            
+            try {
+                // 模拟AST分析
+                const lines = code.split('\n');
+                let indentLevel = 0;
+                let functionCount = 0;
+                let classCount = 0;
+                let complexityScore = 0;
+                let issues = [];
+                
+                result += "📊 代码统计:\n";
+                result += "─".repeat(40) + "\n";
+                result += `行数: ${lines.length}\n`;
+                
+                lines.forEach((line, index) => {
+                    const trimmed = line.trim();
+                    
+                    // 统计函数
+                    if (trimmed.startsWith('def ')) {
+                        functionCount++;
+                        result += `函数定义: ${trimmed.split('def ')[1].split('(')[0]} (第${index + 1}行)\n`;
+                    }
+                    
+                    // 统计类
+                    if (trimmed.startsWith('class ')) {
+                        classCount++;
+                        result += `类定义: ${trimmed.split('class ')[1].split(':')[0]} (第${index + 1}行)\n`;
+                    }
+                    
+                    // 检查缩进
+                    const currentIndent = line.length - line.trimStart().length;
+                    if (currentIndent % 4 !== 0 && trimmed) {
+                        issues.push(`第${index + 1}行: 缩进不是4的倍数`);
+                    }
+                    
+                    // 检查复杂度
+                    if (trimmed.includes('if ') || trimmed.includes('for ') || 
+                        trimmed.includes('while ') || trimmed.includes('except ')) {
+                        complexityScore++;
+                    }
+                });
+                
+                result += `\n总函数数: ${functionCount}\n`;
+                result += `总类数: ${classCount}\n`;
+                result += `复杂度分数: ${complexityScore}\n\n`;
+                
+                // 结构分析
+                result += "🏗️ 代码结构分析:\n";
+                result += "─".repeat(40) + "\n";
+                
+                let currentFunction = null;
+                let nestLevel = 0;
+                
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i];
+                    const trimmed = line.trim();
+                    
+                    if (trimmed.startsWith('def ')) {
+                        currentFunction = trimmed.split('def ')[1].split('(')[0];
+                        result += `\n函数 "${currentFunction}":\n`;
+                        nestLevel = 0;
+                    } else if (trimmed.startsWith('class ')) {
+                        currentFunction = null;
+                        result += `\n类 "${trimmed.split('class ')[1].split(':')[0]}":\n`;
+                    }
+                    
+                    if (currentFunction && trimmed) {
+                        if (trimmed.includes('def ') && line.includes('    ')) {
+                            result += `  ↳ 嵌套函数定义 (第${i + 1}行)\n`;
+                        }
+                    }
+                }
+                
+                // 问题报告
+                if (issues.length > 0) {
+                    result += "\n⚠️ 发现的问题:\n";
+                    result += "─".repeat(40) + "\n";
+                    issues.forEach(issue => {
+                        result += `• ${issue}\n`;
+                    });
+                } else {
+                    result += "\n✅ 未发现明显的结构问题\n";
+                }
+                
+                // 重构建议
+                result += "\n💡 重构建议:\n";
+                result += "─".repeat(40) + "\n";
+                
+                if (complexityScore > 10) {
+                    result += "• 考虑拆分复杂函数\n";
+                    result += "• 提取重复代码为独立函数\n";
+                }
+                
+                if (functionCount > 5) {
+                    result += "• 考虑将相关函数组织到类中\n";
+                }
+                
+                // 检查类型注解
+                if (!code.includes('->') && !code.includes(':')) {
+                    result += "• 建议添加类型注解\n";
+                }
+                
+                // 检查文档字符串
+                if (!code.includes('"""') && !code.includes("'''")) {
+                    result += "• 建议添加文档字符串\n";
+                }
+                
+            } catch (error) {
+                result += `❌ 分析错误: ${error.message}\n`;
+            }
+            
+            output.textContent = result;
+        }
+
+        // 复杂度检查器
+        function checkComplexity() {
+            const code = document.getElementById('complexity-code').value;
+            const output = document.getElementById('complexity-output');
+            
+            let result = "⚙️ 代码复杂度分析报告\n\n";
+            
+            try {
+                const lines = code.split('\n');
+                let metrics = {
+                    cyclomatic: 1,
+                    cognitive: 0,
+                    nesting: 0,
+                    maxNesting: 0,
+                    conditions: 0,
+                    loops: 0,
+                    issues: []
+                };
+                
+                let currentNesting = 0;
+                let functionName = null;
+                let functionStart = null;
+                
+                result += "📊 复杂度指标:\n";
+                result += "─".repeat(40) + "\n";
+                
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i];
+                    const trimmed = line.trim();
+                    
+                    // 检测函数开始
+                    if (trimmed.startsWith('def ')) {
+                        functionName = trimmed.split('def ')[1].split('(')[0];
+                        functionStart = i + 1;
+                        currentNesting = 0;
+                        metrics.cyclomatic = 1;
+                        metrics.cognitive = 0;
+                    }
+                    
+                    // 检查缩进级别
+                    const indent = (line.length - line.trimStart().length) / 4;
+                    
+                    // 更新最大嵌套深度
+                    if (indent > metrics.maxNesting) {
+                        metrics.maxNesting = indent;
+                    }
+                    
+                    // 圈复杂度计算
+                    if (trimmed.includes('if ') || trimmed.includes('elif ') || 
+                        trimmed.includes('except ') || trimmed.includes('and ') ||
+                        trimmed.includes('or ')) {
+                        metrics.cyclomatic++;
+                        metrics.conditions++;
+                        
+                        // 认知复杂度增加
+                        metrics.cognitive += 1 + currentNesting;
+                    }
+                    
+                    if (trimmed.includes('for ') || trimmed.includes('while ')) {
+                        metrics.cyclomatic++;
+                        metrics.loops++;
+                        metrics.cognitive += 2 + currentNesting;
+                    }
+                    
+                    if (trimmed.includes('try:')) {
+                        metrics.cognitive += 1;
+                    }
+                    
+                    // 更新嵌套深度
+                    if (trimmed && !trimmed.includes('def ')) {
+                        currentNesting = Math.floor(indent / 2);
+                    }
+                }
+                
+                result += `圈复杂度: ${metrics.cyclomatic}\n`;
+                result += `认知复杂度: ${metrics.cognitive}\n`;
+                result += `最大嵌套深度: ${metrics.maxNesting}\n`;
+                result += `条件语句数: ${metrics.conditions}\n`;
+                result += `循环语句数: ${metrics.loops}\n\n`;
+                
+                // 复杂度评级
+                result += "📈 复杂度评级:\n";
+                result += "─".repeat(40) + "\n";
+                
+                if (metrics.cyclomatic <= 10) {
+                    result += "圈复杂度: ✅ 良好\n";
+                } else if (metrics.cyclomatic <= 20) {
+                    result += "圈复杂度: ⚠️ 中等\n";
+                } else {
+                    result += "圈复杂度: ❌ 过高\n";
+                }
+                
+                if (metrics.cognitive <= 15) {
+                    result += "认知复杂度: ✅ 良好\n";
+                } else if (metrics.cognitive <= 30) {
+                    result += "认知复杂度: ⚠️ 中等\n";
+                } else {
+                    result += "认知复杂度: ❌ 过高\n";
+                }
+                
+                if (metrics.maxNesting <= 3) {
+                    result += "嵌套深度: ✅ 良好\n";
+                } else if (metrics.maxNesting <= 5) {
+                    result += "嵌套深度: ⚠️ 中等\n";
+                } else {
+                    result += "嵌套深度: ❌ 过高\n";
+                }
+                
+                // 重构建议
+                result += "\n💡 重构建议:\n";
+                result += "─".repeat(40) + "\n";
+                
+                if (metrics.cyclomatic > 10) {
+                    result += "• 拆分复杂条件为独立函数\n";
+                    result += "• 使用卫语句减少嵌套\n";
+                }
+                
+                if (metrics.cognitive > 20) {
+                    result += "• 提取复杂逻辑为独立方法\n";
+                    result += "• 使用策略模式处理多条件分支\n";
+                }
+                
+                if (metrics.maxNesting > 4) {
+                    result += "• 减少嵌套层级，使用提前返回\n";
+                    result += "• 考虑使用列表推导式替代嵌套循环\n";
+                }
+                
+                if (metrics.conditions > 5) {
+                    result += "• 使用多态或字典映射替代多个if语句\n";
+                }
+                
+                // 检测具体问题
+                const nestedPatterns = [
+                    /for.*in.*for.*in/,
+                    /if.*if.*if/,
+                    /try.*except.*try.*except/
+                ];
+                
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i];
+                    
+                    nestedPatterns.forEach(pattern => {
+                        if (pattern.test(line)) {
+                            result += `\n⚠️ 第${i + 1}行: 检测到深度嵌套模式\n`;
+                        }
+                    });
+                    
+                    // 检查超长条件
+                    if (line.includes('if') && line.length > 80) {
+                        result += `\n⚠️ 第${i + 1}行: 条件语句过长，建议拆分\n`;
+                    }
+                }
+                
+            } catch (error) {
+                result += `❌ 分析错误: ${error.message}\n`;
+            }
+            
+            output.textContent = result;
+        }
+
+        // 类型检查模拟器
+        function checkTypes() {
+            const code = document.getElementById('type-code').value;
+            const output = document.getElementById('type-output');
+            
+            let result = "🔬 类型检查报告\n\n";
+            
+            try {
+                const lines = code.split('\n');
+                let typeIssues = [];
+                let typeAnnotations = [];
+                let returnTypeMismatches = [];
+                
+                result += "📊 类型分析:\n";
+                result += "─".repeat(40) + "\n";
+                
+                let currentFunction = null;
+                let expectedReturnType = null;
+                
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i];
+                    const trimmed = line.trim();
+                    
+                    // 检测函数定义和返回类型
+                    if (trimmed.startsWith('def ')) {
+                        const funcMatch = trimmed.match(/def (\w+)\s*\(.*\)\s*->\s*([^:]+)/);
+                        if (funcMatch) {
+                            currentFunction = funcMatch[1];
+                            expectedReturnType = funcMatch[2].trim();
+                        }
+                    }
+                    
+                    // 检查类型注解
+                    if (trimmed.includes(':') && trimmed.includes('->')) {
+                        const annotationMatch = trimmed.match(/(\w+)\s*:\s*([^=,)]+)/g);
+                        if (annotationMatch) {
+                            annotationMatch.forEach(anno => {
+                                typeAnnotations.push(`第${i + 1}行: ${anno.trim()}`);
+                            });
+                        }
+                    }
+                    
+                    // 检查类型错误
+                    
+                    // 字符串和数字比较
+                    if (line.includes('>') || line.includes('<') || line.includes('==')) {
+                        const parts = line.split(/[><=!]=?/);
+                        if (parts.length >= 2) {
+                            const left = parts[0].trim();
+                            const right = parts[1].trim();
+                            
+                            if ((left.includes('"') || left.includes("'")) && 
+                                /^\d+$/.test(right)) {
+                                typeIssues.push(`第${i + 1}行: 字符串与数字比较`);
+                            }
+                        }
+                    }
+                    
+                    // 类型转换问题
+                    if (line.includes('int(') && line.includes('isdigit()')) {
+                        // 正确的做法
+                    } else if (line.includes('int(') && (line.includes('"') || line.includes("'"))) {
+                        typeIssues.push(`第${i + 1}行: 可能需要先检查字符串是否为数字`);
+                    }
+                    
+                    // 返回类型检查
+                    if (line.trim().startsWith('return')) {
+                        const returnValue = line.trim().substring(6).trim();
+                        
+                        if (expectedReturnType) {
+                            // 简单类型检查
+                            if (expectedReturnType.includes('Dict') && 
+                                (returnValue === '{}' || returnValue === 'None')) {
+                                returnTypeMismatches.push(`第${i + 1}行: 应返回${expectedReturnType}，但返回了空值`);
+                            }
+                            
+                            if (expectedReturnType.includes('Dict') && 
+                                returnValue.startsWith('str(')) {
+                                returnTypeMismatches.push(`第${i + 1}行: 应返回${expectedReturnType}，但返回了字符串`);
+                            }
+                        }
+                    }
+                    
+                    // 检查过于宽泛的类型
+                    if (trimmed.includes('Any') || trimmed.includes('object') || 
+                        trimmed.includes('Union[Any') || trimmed.includes('Optional[Any')) {
+                        typeIssues.push(`第${i + 1}行: 类型注解过于宽泛，应使用具体类型`);
+                    }
+                }
+                
+                // 报告类型注解
+                if (typeAnnotations.length > 0) {
+                    result += "✅ 类型注解:\n";
+                    typeAnnotations.forEach(anno => {
+                        result += `  ${anno}\n`;
+                    });
+                }
+                
+                // 报告类型问题
+                if (typeIssues.length > 0) {
+                    result += "\n⚠️ 类型问题:\n";
+                    typeIssues.forEach(issue => {
+                        result += `  • ${issue}\n`;
+                    });
+                }
+                
+                // 报告返回类型不匹配
+                if (returnTypeMismatches.length > 0) {
+                    result += "\n⚠️ 返回类型不匹配:\n";
+                    returnTypeMismatches.forEach(issue => {
+                        result += `  • ${issue}\n`;
+                    });
+                }
+                
+                if (typeIssues.length === 0 && returnTypeMismatches.length === 0) {
+                    result += "\n✅ 未发现明显的类型问题\n";
+                }
+                
+                // 类型安全建议
+                result += "\n💡 类型安全建议:\n";
+                result += "─".repeat(40) + "\n";
+                result += "• 使用mypy进行静态类型检查\n";
+                result += "• 避免使用Any类型，尽量具体化\n";
+                result += "• 使用TypedDict替代Dict[str, Any]\n";
+                result += "• 为泛型容器指定具体类型参数\n";
+                result += "• 使用NewType创建具有语义的类型别名\n";
+                
+            } catch (error) {
+                result += `❌ 分析错误: ${error.message}\n`;
+            }
+            
+            output.textContent = result;
+        }
+
+        // 安全漏洞扫描器
+        function scanSecurity() {
+            const code = document.getElementById('security-code').value;
+            const output = document.getElementById('security-output');
+            
+            let result = "🛡️ 安全漏洞扫描报告\n\n";
+            
+            try {
+                const lines = code.split('\n');
+                let vulnerabilities = [];
+                
+                // 漏洞模式检测
+                const vulnerabilityPatterns = [
+                    { 
+                        pattern: /f"SELECT.*{\w+}/, 
+                        name: "SQL注入", 
+                        severity: "高危",
+                        description: "使用f-string拼接SQL查询"
+                    },
+                    { 
+                        pattern: /%.*%s.*%/, 
+                        name: "SQL注入", 
+                        severity: "高危",
+                        description: "使用%格式化拼接SQL查询"
+                    },
+                    { 
+                        pattern: /os\.system\(.*\)/, 
+                        name: "命令注入", 
+                        severity: "高危",
+                        description: "直接执行系统命令"
+                    },
+                    { 
+                        pattern: /subprocess\.run.*shell=True/, 
+                        name: "命令注入", 
+                        severity: "高危",
+                        description: "使用shell=True执行命令"
+                    },
+                    { 
+                        pattern: /f".*{.*}.*<\/?[a-z][\s\S]*>/i, 
+                        name: "XSS漏洞", 
+                        severity: "高危",
+                        description: "未转义的HTML模板"
+                    },
+                    { 
+                        pattern: /open\(.*f"{.*}"\)/, 
+                        name: "路径遍历", 
+                        severity: "中危",
+                        description: "未验证的文件路径"
+                    },
+                    { 
+                        pattern: /pickle\.loads/, 
+                        name: "反序列化漏洞", 
+                        severity: "高危",
+                        description: "不安全的pickle反序列化"
+                    },
+                    { 
+                        pattern: /random\.randint/, 
+                        name: "弱随机数", 
+                        severity: "中危",
+                        description: "密码学上不安全的随机数"
+                    },
+                    { 
+                        pattern: /=\s*["'].{10,}["']/, 
+                        name: "硬编码凭证", 
+                        severity: "高危",
+                        description: "代码中硬编码的敏感信息"
+                    },
+                    { 
+                        pattern: /debug.*=.*True/, 
+                        name: "调试信息泄露", 
+                        severity: "低危",
+                        description: "生产环境启用了调试模式"
+                    }
+                ];
+                
+                result += "🔍 漏洞扫描结果:\n";
+                result += "─".repeat(40) + "\n";
+                
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i];
+                    const trimmed = line.trim();
+                    
+                    vulnerabilityPatterns.forEach(pattern => {
+                        if (pattern.pattern.test(line)) {
+                            vulnerabilities.push({
+                                line: i + 1,
+                                name: pattern.name,
+                                severity: pattern.severity,
+                                description: pattern.description,
+                                code: trimmed.substring(0, 100)
+                            });
+                        }
+                    });
+                }
+                
+                if (vulnerabilities.length > 0) {
+                    // 按严重程度分组
+                    const high = vulnerabilities.filter(v => v.severity === "高危");
+                    const medium = vulnerabilities.filter(v => v.severity === "中危");
+                    const low = vulnerabilities.filter(v => v.severity === "低危");
+                    
+                    if (high.length > 0) {
+                        result += "🔴 高危漏洞:\n";
+                        high.forEach(vuln => {
+                            result += `  第${vuln.line}行: ${vuln.name} - ${vuln.description}\n`;
+                            result += `     代码: ${vuln.code}\n`;
+                        });
+                    }
+                    
+                    if (medium.length > 0) {
+                        result += "\n🟡 中危漏洞:\n";
+                        medium.forEach(vuln => {
+                            result += `  第${vuln.line}行: ${vuln.name} - ${vuln.description}\n`;
+                        });
+                    }
+                    
+                    if (low.length > 0) {
+                        result += "\n🟢 低危漏洞:\n";
+                        low.forEach(vuln => {
+                            result += `  第${vuln.line}行: ${vuln.name} - ${vuln.description}\n`;
+                        });
+                    }
+                } else {
+                    result += "✅ 未发现明显的安全漏洞\n";
+                }
+                
+                // 修复建议
+                result += "\n🔧 修复建议:\n";
+                result += "─".repeat(40) + "\n";
+                result += "SQL注入:\n";
+                result += "  • 使用参数化查询或ORM\n";
+                result += "  • 验证和清理所有用户输入\n\n";
+                
+                result += "命令注入:\n";
+                result += "  • 避免使用shell=True\n";
+                result += "  • 使用shlex.quote清理参数\n";
+                result += "  • 限制可执行的命令列表\n\n";
+                
+                result += "XSS漏洞:\n";
+                result += "  • 对输出进行HTML转义\n";
+                result += "  • 使用安全的模板引擎\n";
+                result += "  • 设置Content-Security-Policy\n\n";
+                
+                result += "其他安全建议:\n";
+                result += "  • 使用环境变量存储敏感信息\n";
+                result += "  • 禁用生产环境的调试功能\n";
+                result += "  • 定期更新依赖库版本\n";
+                result += "  • 实施输入验证和输出编码\n";
+                
+            } catch (error) {
+                result += `❌ 扫描错误: ${error.message}\n`;
+            }
+            
+            output.textContent = result;
+        }
+
+        // 类生成器
+        function generateClass() {
+            const className = document.getElementById('class-name').value;
+            const propertiesText = document.getElementById('class-properties').value;
+            const methodsText = document.getElementById('class-methods').value;
+            const features = document.getElementById('class-features').value;
+            const output = document.getElementById('class-output');
+            
+            let result = `🏗️ 生成的类: ${className}\n\n`;
+            
+            try {
+                // 解析属性
+                const properties = [];
+                const propertiesLines = propertiesText.split('\n').filter(line => line.trim());
+                propertiesLines.forEach(line => {
+                    const parts = line.split(':');
+                    if (parts.length >= 2) {
+                        const name = parts[0].trim();
+                        const typeAndDefault = parts[1].trim();
+                        const defaultValue = typeAndDefault.includes('=') ? 
+                            typeAndDefault.split('=')[1].trim() : null;
+                        const type = typeAndDefault.split('=')[0].trim();
+                        
+                        properties.push({
+                            name,
+                            type,
+                            defaultValue
+                        });
+                    }
+                });
+                
+                // 解析方法
+                const methods = [];
+                const methodsLines = methodsText.split('\n').filter(line => line.trim());
+                methodsLines.forEach(line => {
+                    const parts = line.split(':');
+                    if (parts.length >= 3) {
+                        methods.push({
+                            name: parts[0].trim(),
+                            returnType: parts[1].trim(),
+                            description: parts[2].trim()
+                        });
+                    }
+                });
+                
+                // 生成代码
+                let code = '';
+                
+                // 导入语句
+                const typesNeeded = new Set();
+                properties.forEach(prop => {
+                    if (prop.type.includes('Optional') || prop.type.includes('List') || 
+                        prop.type.includes('Dict') || prop.type.includes('Union')) {
+                        typesNeeded.add('typing');
+                    }
+                });
+                
+                if (typesNeeded.has('typing')) {
+                    code += "from typing import Optional, List, Dict, Union, Any\n\n";
+                }
+                
+                // 类定义
+                if (features === 'dataclass') {
+                    code += "from dataclasses import dataclass, field\n\n";
+                    code += "@dataclass\n";
+                } else if (features === 'pydantic') {
+                    code += "from pydantic import BaseModel, Field\n\n";
+                }
+                
+                code += `class ${className}`;
+                
+                if (features === 'pydantic') {
+                    code += "(BaseModel):\n";
+                } else {
+                    code += ":\n";
+                }
+                
+                // 文档字符串
+                code += `    """${className}类"""
+    
+`;
+                
+                // 初始化方法
+                if (features !== 'dataclass' && features !== 'pydantic') {
+                    code += "    def __init__(self"
+                    
+                    // 构造函数参数
+                    properties.forEach(prop => {
+                        code += `, ${prop.name}: ${prop.type}`;
+                        if (prop.defaultValue) {
+                            code += ` = ${prop.defaultValue}`;
+                        }
+                    });
+                    
+                    code += "):\n";
+                    code += `        """初始化${className}"""
+        
+`;
+                    
+                    // 属性赋值
+                    properties.forEach(prop => {
+                        code += `        self.${prop.name} = ${prop.name}\n`;
+                    });
+                } else if (features === 'dataclass') {
+                    // 数据类属性
+                    properties.forEach(prop => {
+                        code += `    ${prop.name}: ${prop.type}`;
+                        if (prop.defaultValue) {
+                            code += ` = ${prop.defaultValue}`;
+                        }
+                        code += "\n";
+                    });
+                    code += "\n";
+                } else if (features === 'pydantic') {
+                    // Pydantic模型字段
+                    properties.forEach(prop => {
+                        code += `    ${prop.name}: ${prop.type}`;
+                        if (prop.defaultValue) {
+                            code += ` = ${prop.defaultValue}`;
+                        }
+                        code += "\n";
+                    });
+                    code += "\n";
+                }
+                
+                // 生成方法
+                methods.forEach(method => {
+                    code += `    def ${method.name}(self) -> ${method.returnType}:\n`;
+                    code += `        """${method.description}"""
+        # TODO: 实现方法逻辑
+        raise NotImplementedError("方法未实现")
+    
+`;
+                });
+                
+                // 魔术方法（完整类）
+                if (features === 'full') {
+                    code += `    def __str__(self) -> str:\n`;
+                    code += `        """字符串表示"""
+        return f"{className}("
+`;
+                    properties.forEach((prop, index) => {
+                        code += `            {self.${prop.name}}`;
+                        if (index < properties.length - 1) {
+                            code += ` + ", " + `;
+                        }
+                    });
+                    code += `        )\n\n`;
+                    
+                    code += `    def __repr__(self) -> str:\n`;
+                    code += `        """官方字符串表示"""
+        return f"{className}("
+`;
+                    properties.forEach((prop, index) => {
+                        code += `            ${prop.name}={{self.${prop.name}!r}}`;
+                        if (index < properties.length - 1) {
+                            code += ` + ", " + `;
+                        }
+                    });
+                    code += `        )\n\n`;
+                    
+                    code += `    def __eq__(self, other: object) -> bool:\n`;
+                    code += `        """相等性比较"""
+        if not isinstance(other, ${className}):
+            return NotImplemented
+        return (
+`;
+                    properties.forEach((prop, index) => {
+                        code += `            self.${prop.name} == other.${prop.name}`;
+                        if (index < properties.length - 1) {
+                            code += " and\n";
+                        }
+                    });
+                    code += `\n        )\n`;
+                }
+                
+                result += code;
+                result += "\n📋 生成统计:\n";
+                result += `属性数: ${properties.length}\n`;
+                result += `方法数: ${methods.length}\n`;
+                result += `特性: ${features}\n`;
+                
+            } catch (error) {
+                result += `❌ 生成错误: ${error.message}\n`;
+            }
+            
+            output.textContent = result;
+        }
+
+        // API代码生成器
+        function generateAPI() {
+            const framework = document.getElementById('api-framework').value;
+            const endpointsText = document.getElementById('api-endpoints').value;
+            const modelsText = document.getElementById('api-models').value;
+            const output = document.getElementById('api-output');
+            
+            let result = `🌐 生成的${framework === 'fastapi' ? 'FastAPI' : 'Flask'}代码\n\n`;
+            
+            try {
+                // 解析端点配置
+                let endpoints;
+                try {
+                    endpoints = JSON.parse(endpointsText);
+                } catch (e) {
+                    result += `❌ 端点配置JSON解析错误: ${e.message}\n`;
+                    output.textContent = result;
+                    return;
+                }
+                
+                // 解析模型
+                const models = [];
+                const modelsLines = modelsText.split('\n').filter(line => line.trim());
+                modelsLines.forEach(line => {
+                    const parts = line.split(':');
+                    if (parts.length >= 2) {
+                        const name = parts[0].trim();
+                        const fields = parts[1].trim();
+                        
+                        const fieldList = fields.split(',').map(field => {
+                            const fieldParts = field.split(':');
+                            return {
+                                name: fieldParts[0].trim(),
+                                type: fieldParts[1] ? fieldParts[1].trim() : 'Any'
+                            };
+                        });
+                        
+                        models.push({ name, fields: fieldList });
+                    }
+                });
+                
+                // 生成导入语句
+                let code = '';
+                
+                if (framework === 'fastapi') {
+                    code += "from fastapi import FastAPI, HTTPException, Depends, status\n";
+                    code += "from pydantic import BaseModel\n";
+                    code += "from typing import Optional, List, Dict, Any\n";
+                    code += "from datetime import datetime\n\n";
+                    code += "app = FastAPI(title='API服务', version='1.0.0')\n\n";
+                } else {
+                    code += "from flask import Flask, request, jsonify\n";
+                    code += "from typing import Optional, List, Dict, Any\n";
+                    code += "from datetime import datetime\n\n";
+                    code += "app = Flask(__name__)\n\n";
+                }
+                
+                // 生成数据模型
+                if (models.length > 0) {
+                    code += "# 数据模型\n";
+                    models.forEach(model => {
+                        if (framework === 'fastapi') {
+                            code += `class ${model.name}(BaseModel):\n`;
+                        } else {
+                            code += `class ${model.name}:\n`;
+                            code += "    def __init__(self";
+                            model.fields.forEach(field => {
+                                code += `, ${field.name}: ${field.type}`;
+                            });
+                            code += "):\n";
+                            
+                            model.fields.forEach(field => {
+                                code += `        self.${field.name} = ${field.name}\n`;
+                            });
+                            code += "    \n";
+                            code += "    def to_dict(self):\n";
+                            code += "        return {\n";
+                            model.fields.forEach(field => {
+                                code += `            '${field.name}': self.${field.name},\n`;
+                            });
+                            code += "        }\n\n";
+                        }
+                        
+                        if (framework === 'fastapi') {
+                            model.fields.forEach(field => {
+                                code += `    ${field.name}: ${field.type}\n`;
+                            });
+                            code += "\n";
+                        }
+                    });
+                }
+                
+                // 生成端点
+                code += "# API端点\n";
+                endpoints.forEach(endpoint => {
+                    endpoint.methods.forEach(method => {
+                        const methodLower = method.toLowerCase();
+                        
+                        // 生成路由装饰器
+                        if (framework === 'fastapi') {
+                            code += `@app.${methodLower}("${endpoint.path}")\n`;
+                        } else {
+                            code += `@app.route("${endpoint.path}", methods=['${method}'])\n`;
+                        }
+                        
+                        // 生成函数签名
+                        const funcName = endpoint.path.replace(/[\/{}]/g, '_').replace(/^_/, '') + 
+                                       '_' + methodLower;
+                        code += `async def ${funcName}(`;
+                        
+                        // 添加参数
+                        const params = [];
+                        if (endpoint.params) {
+                            endpoint.params.forEach(param => {
+                                let paramStr = param.name + ': ' + param.type;
+                                if (!param.required) {
+                                    paramStr += ' = None';
+                                }
+                                params.push(paramStr);
+                            });
+                        }
+                        code += params.join(', ');
+                        code += "):\n";
+                        
+                        // 生成文档字符串
+                        code += `    """${endpoint.summary || 'API端点'}\n`;
+                        if (endpoint.params) {
+                            code += "\n    参数:\n";
+                            endpoint.params.forEach(param => {
+                                code += `        ${param.name}: ${param.location}参数\n`;
+                            });
+                        }
+                        if (endpoint.responses) {
+                            code += "\n    响应:\n";
+                            Object.entries(endpoint.responses).forEach(([code, resp]) => {
+                                code += `        ${code}: ${resp.description}\n`;
+                            });
+                        }
+                        code += `    """\n`;
+                        
+                        // 生成函数体
+                        code += "    # TODO: 实现业务逻辑\n";
+                        
+                        if (method === 'GET') {
+                            code += "    # 示例：返回假数据\n";
+                            code += "    return [\n";
+                            code += "        {\"id\": 1, \"name\": \"示例用户\"},\n";
+                            code += "        {\"id\": 2, \"name\": \"测试用户\"}\n";
+                            code += "    ]\n\n";
+                        } else if (method === 'POST') {
+                            code += "    # 示例：创建新资源\n";
+                            code += "    new_id = 1  # 应该是从数据库生成的ID\n";
+                            code += "    return {\n";
+                            code += "        \"id\": new_id,\n";
+                            code += "        \"message\": \"创建成功\",\n";
+                            code += "        \"data\": {\"id\": new_id}  # 返回创建的数据\n";
+                            code += "    }\n\n";
+                        } else {
+                            code += "    return {\"message\": \"功能待实现\"}\n\n";
+                        }
+                    });
+                });
+                
+                // 生成主函数
+                code += "\n# 主函数\n";
+                code += "if __name__ == '__main__':\n";
+                if (framework === 'fastapi') {
+                    code += "    import uvicorn\n";
+                    code += "    uvicorn.run(app, host='0.0.0.0', port=8000)\n";
+                } else {
+                    code += "    app.run(debug=True, host='0.0.0.0', port=5000)\n";
+                }
+                
+                result += code;
+                result += "\n📊 生成统计:\n";
+                result += `框架: ${framework === 'fastapi' ? 'FastAPI' : 'Flask'}\n`;
+                result += `端点数量: ${endpoints.length}\n`;
+                result += `模型数量: ${models.length}\n`;
+                
+            } catch (error) {
+                result += `❌ 生成错误: ${error.message}\n`;
+            }
+            
+            output.textContent = result;
+        }
+
+        // 依赖分析器
+        function analyzeDependencies() {
+            const code = document.getElementById('dependency-code').value;
+            const output = document.getElementById('dependency-output');
+            
+            let result = "📦 依赖分析报告\n\n";
+            
+            try {
+                const lines = code.split('\n');
+                let imports = {
+                    stdlib: new Set(),
+                    thirdParty: new Set(),
+                    local: new Set(),
+                    unused: new Set(),
+                    cyclic: new Set(),
+                    versionIssues: new Set()
+                };
+                
+                let importStatements = [];
+                
+                // 收集所有导入
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    
+                    if (line.startsWith('import ') || line.startsWith('from ')) {
+                        importStatements.push({ line: i + 1, text: line });
+                        
+                        // 解析导入
+                        if (line.startsWith('import ')) {
+                            const modules = line.substring(7).split(',');
+                            modules.forEach(module => {
+                                const moduleName = module.trim().split(' as ')[0].trim();
+                                imports.stdlib.add(moduleName);
+                            });
+                        } else if (line.startsWith('from ')) {
+                            const parts = line.split(' ');
+                            if (parts.length >= 4) {
+                                const moduleName = parts[1].trim();
+                                imports.stdlib.add(moduleName);
+                            }
+                        }
+                    }
+                }
+                
+                // 检查未使用的导入
+                // 这里简化处理，实际需要分析代码中是否使用了导入的模块
+                
+                // 检查第三方库
+                const thirdPartyLibs = ['requests', 'numpy', 'pandas', 'sqlalchemy', 
+                                       'tensorflow', 'torch', 'django', 'matplotlib', 'seaborn'];
+                thirdPartyLibs.forEach(lib => {
+                    if (Array.from(imports.stdlib).some(module => module.includes(lib))) {
+                        imports.stdlib.delete(lib);
+                        imports.thirdParty.add(lib);
+                    }
+                });
+                
+                // 检查模糊导入
+                const wildcardImports = importStatements.filter(stmt => 
+                    stmt.text.includes('import *'));
+                
+                // 检查Python 2遗留模块
+                const python2Modules = ['md5', 'urllib2', 'cgi', 'cStringIO'];
+                const foundPython2 = importStatements.filter(stmt => 
+                    python2Modules.some(module => stmt.text.includes(module)));
+                
+                result += "📊 导入统计:\n";
+                result += "─".repeat(40) + "\n";
+                result += `标准库: ${imports.stdlib.size} 个\n`;
+                result += `第三方库: ${imports.thirdParty.size} 个\n`;
+                
+                if (imports.stdlib.size > 0) {
+                    result += "\n📚 标准库导入:\n";
+                    Array.from(imports.stdlib).forEach(module => {
+                        result += `  • ${module}\n`;
+                    });
+                }
+                
+                if (imports.thirdParty.size > 0) {
+                    result += "\n🌍 第三方库导入:\n";
+                    Array.from(imports.thirdParty).forEach(lib => {
+                        result += `  • ${lib}\n`;
+                    });
+                }
+                
+                // 问题报告
+                let issues = [];
+                
+                if (wildcardImports.length > 0) {
+                    issues.push("⚠️ 发现模糊导入 (from ... import *)，应避免使用");
+                }
+                
+                if (foundPython2.length > 0) {
+                    issues.push("⚠️ 发现Python 2遗留模块导入，需要更新到Python 3");
+                }
+                
+                // 检查重复导入
+                const importCounts = {};
+                importStatements.forEach(stmt => {
+                    const moduleMatch = stmt.text.match(/(?:import|from) (\w+)/);
+                    if (moduleMatch) {
+                        const module = moduleMatch[1];
+                        importCounts[module] = (importCounts[module] || 0) + 1;
+                    }
+                });
+                
+                const duplicates = Object.entries(importCounts)
+                    .filter(([_, count]) => count > 1)
+                    .map(([module, count]) => `${module} (${count}次)`);
+                
+                if (duplicates.length > 0) {
+                    issues.push(`⚠️ 重复导入: ${duplicates.join(', ')}`);
+                }
+                
+                // 检查条件导入
+                const conditionalImports = importStatements.filter(stmt => {
+                    const prevLine = lines[stmt.line - 2] ? lines[stmt.line - 2].trim() : '';
+                    return prevLine.includes('if ') || prevLine.includes('try:');
+                });
+                
+                if (conditionalImports.length > 0) {
+                    issues.push("⚠️ 发现条件导入，可能导致运行时错误");
+                }
+                
+                // 输出问题
+                if (issues.length > 0) {
+                    result += "\n🚨 发现的问题:\n";
+                    result += "─".repeat(40) + "\n";
+                    issues.forEach(issue => {
+                        result += `• ${issue}\n`;
+                    });
+                } else {
+                    result += "\n✅ 导入结构良好\n";
+                }
+                
+                // 优化建议
+                result += "\n💡 优化建议:\n";
+                result += "─".repeat(40) + "\n";
+                result += "1. 避免使用模糊导入 (import *)\n";
+                result += "2. 将导入按标准库、第三方库、本地模块分组\n";
+                result += "3. 使用绝对导入替代相对导入\n";
+                result += "4. 考虑使用__init__.py组织模块\n";
+                result += "5. 定期清理未使用的导入\n";
+                
+                // 依赖管理建议
+                if (imports.thirdParty.size > 0) {
+                    result += "\n📦 依赖管理建议:\n";
+                    result += "─".repeat(40) + "\n";
+                    result += "建议创建requirements.txt文件:\n";
+                    result += "```\n";
+                    Array.from(imports.thirdParty).forEach(lib => {
+                        result += `${lib}>=1.0.0\n`;
+                    });
+                    result += "```\n\n";
+                    
+                    result += "或者使用Pipfile:\n";
+                    result += "```\n[packages]\n";
+                    Array.from(imports.thirdParty).forEach(lib => {
+                        result += `${lib} = \"*\"\n`;
+                    });
+                    result += "```\n";
+                }
+                
+            } catch (error) {
+                result += `❌ 分析错误: ${error.message}\n`;
+            }
+            
+            output.textContent = result;
+        }
+
+// 错误模拟器
+function simulateError() {
+    const errorType = document.getElementById('error-type').value;
+    const output = document.getElementById('error-output');
+    
+    let result = `⚠️ 模拟Python ${errorType}错误\n\n`;
+    
+    try {
+        const errorExamples = {
+            syntax: `# 语法错误示例
+def broken_function()
+    print("缺少冒号")
+    
+# 另一个语法错误
+if True
+    print("缺少冒号")
+
+# 不匹配的括号
+result = (1 + 2 * 3
+
+# 无效的缩进
+def test():
+print("缩进错误")`,
+
+            type: `# 类型错误示例
+result = "hello" + 123  # 字符串和数字不能相加
+
+# 列表和字符串操作
+items = [1, 2, 3]
+items["key"] = "value"  # 错误：列表不能通过字符串索引赋值
+
+# 调用非函数对象
+number = 42
+number()  # 错误：整数对象不可调用
+
+# 不兼容的类型操作
+value = len(123)  # 错误：整数没有长度`,
+
+            import: `# 导入错误示例
+import non_existent_module  # 模块不存在
+
+# 导入不存在的属性
+from math import non_existent_function  # 函数不存在
+
+# 循环导入导致的错误
+# module_a.py
+# import module_b
+
+# module_b.py  
+# import module_a
+
+# 版本不兼容导入
+import python2_only_module  # Python 3中不存在的模块`,
+
+            attribute: `# 属性错误示例
+class MyClass:
+    def __init__(self):
+        self.value = 10
+
+obj = MyClass()
+print(obj.non_existent_attribute)  # 访问不存在的属性
+
+# 内置类型属性错误
+text = "hello"
+text.non_existent_method()  # 字符串没有这个方法
+
+# None对象属性访问
+result = None
+result.some_attribute  # None没有属性`,
+
+            key: `# 键错误示例
+data = {"name": "John", "age": 30}
+print(data["address"])  # 键不存在
+
+# 空字典访问
+empty_dict = {}
+empty_dict["key"]  # 空字典没有键
+
+# 多层字典访问
+nested = {"a": {"b": {"c": 1}}}
+nested["x"]["y"]["z"]  # 中间键不存在`,
+
+            index: `# 索引错误示例
+items = [1, 2, 3]
+print(items[10])  # 索引超出范围
+
+# 空列表索引
+empty_list = []
+empty_list[0]  # 空列表没有索引0
+
+# 字符串索引
+text = "hello"
+text[10]  # 字符串索引超出范围
+
+# 负数索引过大
+items[-10]  # 负数索引超出范围`,
+
+            value: `# 值错误示例
+int("not_a_number")  # 无法转换为整数
+
+# 列表索引值错误
+import math
+math.sqrt(-1)  # 负数的平方根
+
+# 不支持的格式
+datetime.strptime("invalid_date", "%Y-%m-%d")  # 格式不匹配
+
+# 无效参数
+list(range(10, 1, 0))  # step为0`,
+
+            name: `# 名称错误示例
+print(undefined_variable)  # 变量未定义
+
+# 函数名错误
+non_existent_function()  # 函数未定义
+
+# 类名错误
+obj = UndefinedClass()  # 类未定义
+
+# 拼写错误
+value = 10
+print(valu)  # 变量名拼写错误`,
+
+            recursion: `# 递归错误示例
+def infinite_recursion():
+    infinite_recursion()  # 无限递归
+
+infinite_recursion()
+
+# 递归深度过大
+def deep_recursion(n):
+    if n <= 0:
+        return 0
+    return deep_recursion(n-1)
+
+deep_recursion(10000)  # 超出递归深度限制`,
+
+            memory: `# 内存错误示例
+# 创建超大对象
+huge_list = [0] * (10**9)  # 可能内存不足
+
+# 内存泄漏模拟
+leaking_data = []
+while True:
+    leaking_data.append("x" * 1000000)  # 持续分配内存
+
+# 循环引用导致无法垃圾回收
+class Node:
+    def __init__(self):
+        self.ref = None
+
+a = Node()
+b = Node()
+a.ref = b
+b.ref = a  # 循环引用`,
+
+            all: `# 多种常见错误示例集合
+# 语法错误
+def bad_syntax(
+
+# 类型错误
+result = "text" + 123
+
+# 名称错误  
+print(undefined)
+
+# 索引错误
+items = []
+items[0]
+
+# 键错误
+data = {}
+data["key"]
+
+# 属性错误
+None.some_attr
+
+# 值错误
+int("abc")
+
+# 导入错误
+import non_existent`
+        };
+        
+        if (errorExamples[errorType]) {
+            result += errorExamples[errorType];
+            
+            // 添加调试建议
+            result += "\n\n🔧 调试建议:\n";
+            result += "─".repeat(40) + "\n";
+            
+            switch(errorType) {
+                case 'syntax':
+                    result += "• 检查括号、引号是否匹配\n";
+                    result += "• 检查冒号和缩进是否正确\n";
+                    result += "• 使用代码编辑器的语法高亮功能\n";
+                    break;
+                case 'type':
+                    result += "• 检查变量的数据类型\n";
+                    result += "• 使用类型注解和类型检查工具\n";
+                    result += "• 进行显式的类型转换\n";
+                    break;
+                case 'import':
+                    result += "• 检查模块是否已安装\n";
+                    result += "• 检查模块名称拼写\n";
+                    result += "• 检查PYTHONPATH设置\n";
+                    break;
+                default:
+                    result += "• 阅读错误信息的详细描述\n";
+                    result += "• 使用try-except捕获异常\n";
+                    result += "• 使用调试器逐步执行代码\n";
+            }
+        } else {
+            result += "❌ 未知错误类型";
+        }
+        
+    } catch (error) {
+        result += `❌ 模拟错误时发生错误: ${error.message}\n`;
+    }
+    
+    output.textContent = result;
+}

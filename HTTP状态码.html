@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTTP状态码详解表</title>
+    <style>
+        :root {
+            --info-color: #17a2b8;
+            --success-color: #28a745;
+            --redirect-color: #ffc107;
+            --client-error-color: #dc3545;
+            --server-error-color: #6f42c1;
+            --light-bg: #f8f9fa;
+            --dark-bg: #343a40;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .search-box {
+            flex: 1;
+            min-width: 250px;
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+        
+        .category-filters {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .category-btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .category-btn.active {
+            transform: scale(1.05);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+        
+        .info-btn { background-color: var(--info-color); color: white; }
+        .success-btn { background-color: var(--success-color); color: white; }
+        .redirect-btn { background-color: var(--redirect-color); color: black; }
+        .client-error-btn { background-color: var(--client-error-color); color: white; }
+        .server-error-btn { background-color: var(--server-error-color); color: white; }
+        .all-btn { background-color: var(--dark-bg); color: white; }
+        
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .status-card {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .status-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+        }
+        
+        .status-header {
+            padding: 15px;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .status-code {
+            font-size: 1.8rem;
+            font-weight: bold;
+        }
+        
+        .status-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        
+        .status-body {
+            padding: 15px;
+            flex-grow: 1;
+        }
+        
+        .status-desc {
+            margin-bottom: 15px;
+            font-size: 0.95rem;
+        }
+        
+        .analogy {
+            background-color: var(--light-bg);
+            padding: 12px;
+            border-radius: 8px;
+            border-left: 4px solid #6c757d;
+            font-style: italic;
+        }
+        
+        .analogy-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #495057;
+        }
+        
+        .info { border-left: 5px solid var(--info-color); }
+        .success { border-left: 5px solid var(--success-color); }
+        .redirect { border-left: 5px solid var(--redirect-color); }
+        .client-error { border-left: 5px solid var(--client-error-color); }
+        .server-error { border-left: 5px solid var(--server-error-color); }
+        
+        .info .status-header { background-color: var(--info-color); }
+        .success .status-header { background-color: var(--success-color); }
+        .redirect .status-header { background-color: var(--redirect-color); }
+        .client-error .status-header { background-color: var(--client-error-color); }
+        .server-error .status-header { background-color: var(--server-error-color); }
+        
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+            }
+            
+            .category-filters {
+                justify-content: center;
+            }
+            
+            .status-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>HTTP状态码详解表</h1>
+            <p class="subtitle">包含通俗易懂的类比解释，助你轻松理解每个状态码的含义</p>
+        </header>
+        
+        <div class="controls">
+            <input type="text" class="search-box" placeholder="搜索状态码或描述...">
+            <div class="category-filters">
+                <button class="category-btn all-btn active" data-category="all">全部</button>
+                <button class="category-btn info-btn" data-category="1xx">信息响应 (1xx)</button>
+                <button class="category-btn success-btn" data-category="2xx">成功响应 (2xx)</button>
+                <button class="category-btn redirect-btn" data-category="3xx">重定向 (3xx)</button>
+                <button class="category-btn client-error-btn" data-category="4xx">客户端错误 (4xx)</button>
+                <button class="category-btn server-error-btn" data-category="5xx">服务端错误 (5xx)</button>
+            </div>
+        </div>
+        
+        <div class="status-grid" id="statusGrid">
+            <!-- 状态码卡片将通过JavaScript动态生成 -->
+        </div>
+        
+        <footer>
+            <p>HTTP状态码参考表 | 设计用于教育和参考目的</p>
+        </footer>
+    </div>
+
+    <script>
+        // HTTP状态码数据
+        const statusCodes = [
+            // 1xx 信息响应
+            {
+                code: 100,
+                name: "Continue",
+                category: "1xx",
+                description: "服务器已收到请求的初始部分，客户端应继续发送请求的其余部分。",
+                analogy: "餐厅服务员说：'您点的菜我记下了，请继续告诉我其他要求。'"
+            },
+            {
+                code: 101,
+                name: "Switching Protocols",
+                category: "1xx",
+                description: "服务器应客户端要求，正在切换协议。",
+                analogy: "电话客服说：'好的，我将为您转接到技术部门，请稍等。'"
+            },
+            {
+                code: 102,
+                name: "Processing",
+                category: "1xx",
+                description: "服务器已收到并正在处理请求，但尚无可用响应。",
+                analogy: "银行柜员说：'您的申请正在处理中，请稍等片刻。'"
+            },
+            
+            // 2xx 成功响应
+            {
+                code: 200,
+                name: "OK",
+                category: "2xx",
+                description: "请求成功，服务器已返回请求的数据。",
+                analogy: "您点的餐已准备好，可以享用了。"
+            },
+            {
+                code: 201,
+                name: "Created",
+                category: "2xx",
+                description: "请求成功，服务器已创建了新资源。",
+                analogy: "您在银行成功开设了新账户。"
+            },
+            {
+                code: 202,
+                name: "Accepted",
+                category: "2xx",
+                description: "服务器已接受请求，但尚未处理完成。",
+                analogy: "餐厅接受了您的订餐，但菜品还在准备中。"
+            },
+            {
+                code: 204,
+                name: "No Content",
+                category: "2xx",
+                description: "服务器成功处理了请求，但不需要返回任何内容。",
+                analogy: "您把垃圾扔进垃圾桶，不需要任何回应。"
+            },
+            {
+                code: 206,
+                name: "Partial Content",
+                category: "2xx",
+                description: "服务器成功处理了部分GET请求，用于大文件的分块下载。",
+                analogy: "您从书店买了多卷书，现在只收到了第一卷。"
+            },
+            
+            // 3xx 重定向
+            {
+                code: 301,
+                name: "Moved Permanently",
+                category: "3xx",
+                description: "请求的资源已永久移动到新位置。",
+                analogy: "您常去的商店已永久搬迁，并给了您新地址。"
+            },
+            {
+                code: 302,
+                name: "Found",
+                category: "3xx",
+                description: "请求的资源临时从不同的位置响应。",
+                analogy: "您要找的商品今天临时放在另一个货架上。"
+            },
+            {
+                code: 304,
+                name: "Not Modified",
+                category: "3xx",
+                description: "资源未修改，客户端可以使用缓存的版本。",
+                analogy: "您问书店有没有新版本的某本书，店员说：'没有，还是您上次买的那版。'"
+            },
+            {
+                code: 307,
+                name: "Temporary Redirect",
+                category: "3xx",
+                description: "请求的资源临时从不同的URL响应。",
+                analogy: "道路施工，请临时绕行此路线。"
+            },
+            {
+                code: 308,
+                name: "Permanent Redirect",
+                category: "3xx",
+                description: "请求的资源已永久移动到新位置，且请求方法和主体不变。",
+                analogy: "公司永久搬迁，所有业务都转到新地址办理。"
+            },
+            
+            // 4xx 客户端错误
+            {
+                code: 400,
+                name: "Bad Request",
+                category: "4xx",
+                description: "服务器无法理解请求，通常是语法错误。",
+                analogy: "您用外语点餐，但服务员完全听不懂您在说什么。"
+            },
+            {
+                code: 401,
+                name: "Unauthorized",
+                category: "4xx",
+                description: "请求需要用户认证。",
+                analogy: "进入会员制俱乐部，但您没有出示会员卡。"
+            },
+            {
+                code: 403,
+                name: "Forbidden",
+                category: "4xx",
+                description: "服务器理解请求，但拒绝执行。",
+                analogy: "您有会员卡，但想进入只有VIP才能进入的区域。"
+            },
+            {
+                code: 404,
+                name: "Not Found",
+                category: "4xx",
+                description: "服务器找不到请求的资源。",
+                analogy: "您要找的商品在商店里已经售罄或缺货。"
+            },
+            {
+                code: 405,
+                name: "Method Not Allowed",
+                category: "4xx",
+                description: "请求方法不被目标资源支持。",
+                analogy: "您试图用信用卡在只收现金的商店付款。"
+            },
+            {
+                code: 408,
+                name: "Request Timeout",
+                category: "4xx",
+                description: "服务器等待请求时超时。",
+                analogy: "您点餐时犹豫太久，服务员去服务其他客人了。"
+            },
+            {
+                code: 409,
+                name: "Conflict",
+                category: "4xx",
+                description: "请求与服务器当前状态冲突。",
+                analogy: "两人同时试图预订同一个酒店房间。"
+            },
+            {
+                code: 413,
+                name: "Payload Too Large",
+                category: "4xx",
+                description: "请求实体过大，服务器拒绝处理。",
+                analogy: "您试图用小型轿车搬运一个大型沙发。"
+            },
+            {
+                code: 414,
+                name: "URI Too Long",
+                category: "4xx",
+                description: "请求的URI过长，服务器拒绝处理。",
+                analogy: "您给餐厅的订单说明写了一整页纸，服务员拒绝阅读。"
+            },
+            {
+                code: 415,
+                name: "Unsupported Media Type",
+                category: "4xx",
+                description: "服务器不支持请求数据的格式。",
+                analogy: "您试图在只接受信用卡的商店使用外币现金付款。"
+            },
+            {
+                code: 422,
+                name: "Unprocessable Entity",
+                category: "4xx",
+                description: "请求格式正确，但由于语义错误而无法处理。",
+                analogy: "您正确填写了申请表，但填写的内容不符合要求（如年龄填了200岁）。"
+            },
+            {
+                code: 429,
+                name: "Too Many Requests",
+                category: "4xx",
+                description: "用户在给定时间内发送了太多请求。",
+                analogy: "您频繁打电话给客服，客服要求您稍后再试。"
+            },
+            
+            // 5xx 服务端错误
+            {
+                code: 500,
+                name: "Internal Server Error",
+                category: "5xx",
+                description: "服务器遇到意外情况，无法完成请求。",
+                analogy: "餐厅厨房发生意外，暂时无法提供任何菜品。"
+            },
+            {
+                code: 501,
+                name: "Not Implemented",
+                category: "5xx",
+                description: "服务器不支持完成请求所需的功能。",
+                analogy: "您要求餐厅提供菜单上没有的菜品。"
+            },
+            {
+                code: 502,
+                name: "Bad Gateway",
+                category: "5xx",
+                description: "服务器作为网关或代理，从上游服务器收到无效响应。",
+                analogy: "餐厅服务员无法从厨房得到回应。"
+            },
+            {
+                code: 503,
+                name: "Service Unavailable",
+                category: "5xx",
+                description: "服务器暂时无法处理请求（由于超载或维护）。",
+                analogy: "餐厅客满，暂时无法接待新客人。"
+            },
+            {
+                code: 504,
+                name: "Gateway Timeout",
+                category: "5xx",
+                description: "服务器作为网关或代理，未能及时从上游服务器收到响应。",
+                analogy: "餐厅服务员等待厨房出菜时间过长。"
+            },
+            {
+                code: 507,
+                name: "Insufficient Storage",
+                category: "5xx",
+                description: "服务器无法存储完成请求所需的内容。",
+                analogy: "餐厅的储藏室已满，无法接收新食材。"
+            }
+        ];
+
+        // 渲染状态码卡片
+        function renderStatusCards(codes) {
+            const grid = document.getElementById('statusGrid');
+            grid.innerHTML = '';
+            
+            codes.forEach(status => {
+                const card = document.createElement('div');
+                card.className = `status-card ${status.category.replace('xx', '')}`;
+                
+                card.innerHTML = `
+                    <div class="status-header">
+                        <div class="status-code">${status.code}</div>
+                        <div class="status-name">${status.name}</div>
+                    </div>
+                    <div class="status-body">
+                        <div class="status-desc">${status.description}</div>
+                        <div class="analogy">
+                            <div class="analogy-title">通俗解释：</div>
+                            ${status.analogy}
+                        </div>
+                    </div>
+                `;
+                
+                grid.appendChild(card);
+            });
+        }
+
+        // 初始渲染
+        renderStatusCards(statusCodes);
+
+        // 搜索功能
+        const searchBox = document.querySelector('.search-box');
+        searchBox.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            
+            if (searchTerm) {
+                const filteredCodes = statusCodes.filter(status => 
+                    status.code.toString().includes(searchTerm) ||
+                    status.name.toLowerCase().includes(searchTerm) ||
+                    status.description.toLowerCase().includes(searchTerm) ||
+                    status.analogy.toLowerCase().includes(searchTerm)
+                );
+                renderStatusCards(filteredCodes);
+            } else {
+                renderStatusCards(statusCodes);
+            }
+        });
+
+        // 分类筛选功能
+        const categoryButtons = document.querySelectorAll('.category-btn');
+        categoryButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const category = this.getAttribute('data-category');
+                
+                // 更新按钮状态
+                categoryButtons.forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
+                
+                if (category === 'all') {
+                    renderStatusCards(statusCodes);
+                } else {
+                    const filteredCodes = statusCodes.filter(status => status.category === category);
+                    renderStatusCards(filteredCodes);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

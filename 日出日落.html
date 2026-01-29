@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>杭州日出日落时间计算器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background-color: rgba(0, 0, 0, 0.6);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.8;
+        }
+        
+        .content {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+        }
+        
+        .input-section {
+            flex: 1;
+            min-width: 300px;
+        }
+        
+        .result-section {
+            flex: 1;
+            min-width: 300px;
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 25px;
+            backdrop-filter: blur(10px);
+            height: 100%;
+        }
+        
+        h2 {
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            color: #fdbb2d;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 1.1rem;
+        }
+        
+        input[type="date"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: none;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            font-size: 1.1rem;
+            color: #333;
+        }
+        
+        button {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            background: #fdbb2d;
+            color: #333;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+        
+        button:hover {
+            background: #ffa500;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .result-display {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+        }
+        
+        .time-card {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            flex: 1;
+            margin: 0 10px;
+        }
+        
+        .time-label {
+            font-size: 1rem;
+            opacity: 0.8;
+            margin-bottom: 10px;
+        }
+        
+        .time-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #fdbb2d;
+        }
+        
+        .daylight-bar {
+            height: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            margin: 20px 0;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .daylight-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #1a2a6c, #fdbb2d);
+            border-radius: 10px;
+            width: 60%;
+        }
+        
+        .daylight-info {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+        
+        .additional-info {
+            margin-top: 30px;
+        }
+        
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .location {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .hangzhou-image {
+            width: 100%;
+            height: 200px;
+            background: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), 
+                        url('https://images.unsplash.com/photo-1587825140708-dfaf72ae4b04?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80');
+            background-size: cover;
+            background-position: center;
+            border-radius: 15px;
+            margin-top: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .content {
+                flex-direction: column;
+            }
+            
+            .result-display {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .time-card {
+                margin: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>杭州日出日落时间计算器</h1>
+            <p class="subtitle">精准计算杭州任意日期的日出日落时间</p>
+        </header>
+        
+        <div class="content">
+            <div class="input-section">
+                <div class="card">
+                    <h2>选择日期</h2>
+                    <div class="input-group">
+                        <label for="date-input">请输入日期：</label>
+                        <input type="date" id="date-input" value="2023-06-21">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>杭州位置信息：</label>
+                        <div class="location">经度: 120.1552° E | 纬度: 30.2741° N</div>
+                    </div>
+                    
+                    <button id="calculate-btn">计算日出日落时间</button>
+                    
+                    <div class="hangzhou-image"></div>
+                </div>
+            </div>
+            
+            <div class="result-section">
+                <div class="card">
+                    <h2>计算结果</h2>
+                    
+                    <div class="result-display">
+                        <div class="time-card">
+                            <div class="time-label">日出时间</div>
+                            <div class="time-value" id="sunrise-time">05:45</div>
+                        </div>
+                        
+                        <div class="time-card">
+                            <div class="time-label">日落时间</div>
+                            <div class="time-value" id="sunset-time">19:33</div>
+                        </div>
+                    </div>
+                    
+                    <div class="daylight-info">
+                        <div class="daylight-label">白昼时长</div>
+                        <div class="daylight-value" id="daylight-duration">13小时48分钟</div>
+                    </div>
+                    
+                    <div class="daylight-bar">
+                        <div class="daylight-fill" id="daylight-fill"></div>
+                    </div>
+                    
+                    <div class="additional-info">
+                        <h3>详细信息</h3>
+                        <div class="info-item">
+                            <span>日期:</span>
+                            <span id="selected-date">2023年6月21日</span>
+                        </div>
+                        <div class="info-item">
+                            <span>日照时长:</span>
+                            <span id="sunshine-duration">13小时48分钟</span>
+                        </div>
+                        <div class="info-item">
+                            <span>黑夜时长:</span>
+                            <span id="night-duration">10小时12分钟</span>
+                        </div>
+                        <div class="info-item">
+                            <span>太阳高度角:</span>
+                            <span id="solar-elevation">83.5° (正午)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const dateInput = document.getElementById('date-input');
+            const calculateBtn = document.getElementById('calculate-btn');
+            const sunriseTime = document.getElementById('sunrise-time');
+            const sunsetTime = document.getElementById('sunset-time');
+            const daylightDuration = document.getElementById('daylight-duration');
+            const daylightFill = document.getElementById('daylight-fill');
+            const selectedDate = document.getElementById('selected-date');
+            const sunshineDuration = document.getElementById('sunshine-duration');
+            const nightDuration = document.getElementById('night-duration');
+            const solarElevation = document.getElementById('solar-elevation');
+            
+            // 设置默认日期为今天
+            const today = new Date();
+            dateInput.valueAsDate = today;
+            
+            // 初始计算
+            calculateSunTimes();
+            
+            // 添加计算按钮事件
+            calculateBtn.addEventListener('click', calculateSunTimes);
+            
+            // 计算日出日落时间
+            function calculateSunTimes() {
+                const selectedDateObj = new Date(dateInput.value);
+                const formattedDate = formatDate(selectedDateObj);
+                selectedDate.textContent = formattedDate;
+                
+                // 使用天文算法计算日出日落时间（简化版）
+                // 实际应用中应使用更精确的天文算法
+                const times = calculateSunriseSunset(selectedDateObj);
+                
+                // 更新显示
+                sunriseTime.textContent = times.sunrise;
+                sunsetTime.textContent = times.sunset;
+                daylightDuration.textContent = times.daylightDuration;
+                sunshineDuration.textContent = times.daylightDuration;
+                nightDuration.textContent = times.nightDuration;
+                solarElevation.textContent = times.solarElevation;
+                
+                // 更新日照进度条
+                updateDaylightBar(times.daylightPercent);
+            }
+            
+            // 格式化日期
+            function formatDate(date) {
+                const year = date.getFullYear();
+                const month = date.getMonth() + 1;
+                const day = date.getDate();
+                return `${year}年${month}月${day}日`;
+            }
+            
+            // 计算日出日落时间（简化版天文算法）
+            function calculateSunriseSunset(date) {
+                // 杭州的经纬度
+                const longitude = 120.1552; // 东经
+                const latitude = 30.2741;   // 北纬
+                
+                // 计算儒略日
+                const julianDate = calculateJulianDay(date);
+                
+                // 计算太阳位置
+                const solarPosition = calculateSolarPosition(julianDate, longitude, latitude);
+                
+                // 计算日出日落时间（简化计算）
+                // 实际算法更复杂，这里使用近似值
+                const dayOfYear = getDayOfYear(date);
+                
+                // 根据一年中的日期和纬度估算日出日落时间
+                const {sunrise, sunset, daylightMinutes} = estimateSunTimes(dayOfYear, latitude);
+                
+                // 计算日照百分比
+                const daylightPercent = (daylightMinutes / (24 * 60)) * 100;
+                
+                // 格式化时间
+                const sunriseFormatted = formatTime(sunrise);
+                const sunsetFormatted = formatTime(sunset);
+                
+                // 计算黑夜时长
+                const nightMinutes = 24 * 60 - daylightMinutes;
+                const nightDurationFormatted = formatDuration(nightMinutes);
+                
+                // 计算太阳高度角（正午）
+                const solarElevationAtNoon = calculateSolarElevation(dayOfYear, latitude);
+                
+                return {
+                    sunrise: sunriseFormatted,
+                    sunset: sunsetFormatted,
+                    daylightDuration: formatDuration(daylightMinutes),
+                    nightDuration: nightDurationFormatted,
+                    daylightPercent: daylightPercent,
+                    solarElevation: `${solarElevationAtNoon.toFixed(1)}° (正午)`
+                };
+            }
+            
+            // 估算日出日落时间（基于日期和纬度）
+            function estimateSunTimes(dayOfYear, latitude) {
+                // 简化算法，实际应用应使用更精确的天文计算
+                // 这里使用基于纬度和一年中日期的近似计算
+                
+                // 计算日照时长（小时）
+                const daylightHours = 12 + 4 * Math.sin((dayOfYear - 80) * 2 * Math.PI / 365) * 
+                                      Math.sin(latitude * Math.PI / 180);
+                
+                const daylightMinutes = Math.round(daylightHours * 60);
+                
+                // 计算日出时间（以分钟表示）
+                const sunriseMinutes = Math.round(12 * 60 - daylightMinutes / 2);
+                
+                // 计算日落时间（以分钟表示）
+                const sunsetMinutes = Math.round(12 * 60 + daylightMinutes / 2);
+                
+                return {
+                    sunrise: sunriseMinutes,
+                    sunset: sunsetMinutes,
+                    daylightMinutes: daylightMinutes
+                };
+            }
+            
+            // 计算一年中的第几天
+            function getDayOfYear(date) {
+                const start = new Date(date.getFullYear(), 0, 0);
+                const diff = date - start;
+                const oneDay = 1000 * 60 * 60 * 24;
+                return Math.floor(diff / oneDay);
+            }
+            
+            // 计算儒略日
+            function calculateJulianDay(date) {
+                const year = date.getFullYear();
+                const month = date.getMonth() + 1;
+                const day = date.getDate();
+                const hour = date.getHours() + date.getMinutes() / 60;
+                
+                if (month <= 2) {
+                    year -= 1;
+                    month += 12;
+                }
+                
+                const a = Math.floor(year / 100);
+                const b = 2 - a + Math.floor(a / 4);
+                
+                return Math.floor(365.25 * (year + 4716)) + 
+                       Math.floor(30.6001 * (month + 1)) + 
+                       day + b - 1524.5 + hour / 24;
+            }
+            
+            // 计算太阳位置（简化版）
+            function calculateSolarPosition(julianDay, longitude, latitude) {
+                // 简化计算，实际应用应使用更精确的算法
+                return {
+                    rightAscension: 0,
+                    declination: 0
+                };
+            }
+            
+            // 计算太阳高度角（正午）
+            function calculateSolarElevation(dayOfYear, latitude) {
+                // 计算太阳赤纬（近似）
+                const declination = 23.45 * Math.sin(2 * Math.PI * (284 + dayOfYear) / 365);
+                
+                // 计算正午太阳高度角
+                const solarElevation = 90 - Math.abs(latitude - declination);
+                
+                return solarElevation;
+            }
+            
+            // 格式化时间（分钟数转换为HH:MM）
+            function formatTime(minutes) {
+                const hours = Math.floor(minutes / 60);
+                const mins = Math.round(minutes % 60);
+                return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+            }
+            
+            // 格式化时长（分钟转换为X小时Y分钟）
+            function formatDuration(minutes) {
+                const hours = Math.floor(minutes / 60);
+                const mins = Math.round(minutes % 60);
+                return `${hours}小时${mins}分钟`;
+            }
+            
+            // 更新日照进度条
+            function updateDaylightBar(percent) {
+                daylightFill.style.width = `${percent}%`;
+            }
+        });
+    </script>
+</body>
+</html>

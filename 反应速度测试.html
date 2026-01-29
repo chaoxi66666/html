@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>反应速度测试</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #f1f1f1;
+            padding: 20px;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 800px;
+            text-align: center;
+            background-color: rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        h1 {
+            color: #4dccbd;
+            margin-bottom: 10px;
+            font-size: 2.5rem;
+            text-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+        
+        .subtitle {
+            color: #aaa;
+            margin-bottom: 30px;
+            font-size: 1.1rem;
+        }
+        
+        .instructions {
+            background-color: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 25px;
+            text-align: left;
+            line-height: 1.6;
+        }
+        
+        .instructions h2 {
+            color: #6a93cb;
+            margin-bottom: 10px;
+            font-size: 1.3rem;
+        }
+        
+        .instructions ol {
+            padding-left: 20px;
+            margin-bottom: 15px;
+        }
+        
+        .instructions li {
+            margin-bottom: 8px;
+        }
+        
+        .warning {
+            color: #ff9a8b;
+            font-weight: bold;
+            background-color: rgba(255, 154, 139, 0.1);
+            padding: 10px;
+            border-radius: 8px;
+            border-left: 4px solid #ff9a8b;
+        }
+        
+        .test-area {
+            width: 100%;
+            height: 300px;
+            border-radius: 15px;
+            margin: 25px 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: background-color 0.1s;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .waiting-color {
+            background-color: #2d3436;
+        }
+        
+        .ready-color {
+            background-color: #00b894;
+        }
+        
+        .react-color {
+            background-color: #e74c3c;
+        }
+        
+        .test-area::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, transparent 30%, rgba(0, 0, 0, 0.2) 100%);
+            pointer-events: none;
+        }
+        
+        .display-text {
+            font-size: 2.2rem;
+            font-weight: bold;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+            z-index: 1;
+            padding: 20px;
+            border-radius: 10px;
+            background-color: rgba(0, 0, 0, 0.3);
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        
+        button {
+            padding: 14px 28px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        #startBtn {
+            background: linear-gradient(to right, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+        
+        #resetBtn {
+            background: linear-gradient(to right, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 7px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        button:active {
+            transform: translateY(1px);
+        }
+        
+        button:disabled {
+            background: #555;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .results {
+            background-color: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+            text-align: left;
+        }
+        
+        .results h2 {
+            color: #6a93cb;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+        
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .result-item:last-child {
+            border-bottom: none;
+        }
+        
+        .result-label {
+            color: #aaa;
+        }
+        
+        .result-value {
+            font-weight: bold;
+            color: #4dccbd;
+            font-size: 1.2rem;
+        }
+        
+        .history {
+            margin-top: 25px;
+        }
+        
+        .history h3 {
+            color: #6a93cb;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        #historyList {
+            list-style-type: none;
+            max-height: 150px;
+            overflow-y: auto;
+            background-color: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            padding: 10px;
+        }
+        
+        #historyList li {
+            padding: 8px 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        #historyList li:last-child {
+            border-bottom: none;
+        }
+        
+        .history-number {
+            color: #aaa;
+        }
+        
+        .history-time {
+            color: #4dccbd;
+            font-weight: bold;
+        }
+        
+        .footer {
+            margin-top: 25px;
+            color: #777;
+            font-size: 0.9rem;
+            text-align: center;
+        }
+        
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .test-area {
+                height: 250px;
+            }
+            
+            .display-text {
+                font-size: 1.8rem;
+            }
+            
+            .controls {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>反应速度测试</h1>
+        <p class="subtitle">测试你在颜色变化时的反应时间，精确到毫秒</p>
+        
+        <div class="instructions">
+            <h2>测试说明</h2>
+            <ol>
+                <li>点击"开始测试"按钮，屏幕将变为绿色</li>
+                <li>在10秒内的随机时间，屏幕会突然变为红色</li>
+                <li>当屏幕变为红色时，<strong>立即点击屏幕</strong></li>
+                <li>你的反应时间将被记录并显示（精确到0.001秒）</li>
+                <li>尝试获得最佳成绩，查看你的反应速度排名</li>
+            </ol>
+            <div class="warning">注意：请勿提前点击屏幕，否则测试将无效！</div>
+        </div>
+        
+        <div id="testArea" class="test-area waiting-color">
+            <div id="displayText" class="display-text">点击开始按钮进行测试</div>
+        </div>
+        
+        <div class="controls">
+            <button id="startBtn">
+                <span>开始测试</span>
+            </button>
+            <button id="resetBtn">
+                <span>重置测试</span>
+            </button>
+        </div>
+        
+        <div class="results">
+            <h2>测试结果</h2>
+            <div class="result-item">
+                <span class="result-label">本次反应时间：</span>
+                <span id="currentTime" class="result-value">-</span>
+            </div>
+            <div class="result-item">
+                <span class="result-label">最佳反应时间：</span>
+                <span id="bestTime" class="result-value">-</span>
+            </div>
+            <div class="result-item">
+                <span class="result-label">平均反应时间：</span>
+                <span id="averageTime" class="result-value">-</span>
+            </div>
+            <div class="result-item">
+                <span class="result-label">测试次数：</span>
+                <span id="testCount" class="result-value">0</span>
+            </div>
+        </div>
+        
+        <div class="history">
+            <h3>测试历史</h3>
+            <ul id="historyList">
+                <!-- 历史记录将通过JavaScript动态添加 -->
+            </ul>
+        </div>
+        
+        <div class="footer">
+            <p>提示：人类平均反应时间约为0.25秒（250毫秒）。专业游戏玩家通常能达到0.15秒（150毫秒）。</p>
+        </div>
+    </div>
+
+    <script>
+        // 获取DOM元素
+        const testArea = document.getElementById('testArea');
+        const displayText = document.getElementById('displayText');
+        const startBtn = document.getElementById('startBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const currentTimeEl = document.getElementById('currentTime');
+        const bestTimeEl = document.getElementById('bestTime');
+        const averageTimeEl = document.getElementById('averageTime');
+        const testCountEl = document.getElementById('testCount');
+        const historyList = document.getElementById('historyList');
+        
+        // 初始化变量
+        let testStartTime = 0;
+        let colorChangeTime = 0;
+        let reactionTime = 0;
+        let testActive = false;
+        let waitingForClick = false;
+        let timeoutId = null;
+        
+        // 测试结果历史记录
+        let testHistory = [];
+        let bestTime = null;
+        let averageTime = null;
+        
+        // 开始测试
+        startBtn.addEventListener('click', startTest);
+        
+        // 重置测试
+        resetBtn.addEventListener('click', resetTest);
+        
+        // 点击测试区域
+        testArea.addEventListener('click', handleTestAreaClick);
+        
+        // 开始测试函数
+        function startTest() {
+            if (testActive) return;
+            
+            // 重置状态
+            testActive = true;
+            waitingForClick = false;
+            reactionTime = 0;
+            
+            // 更新UI
+            displayText.textContent = "准备...";
+            testArea.className = "test-area ready-color";
+            startBtn.disabled = true;
+            currentTimeEl.textContent = "-";
+            
+            // 设置随机时间后改变颜色（1-10秒之间）
+            const delay = Math.random() * 9000 + 1000; // 1000-10000毫秒
+            colorChangeTime = Date.now() + delay;
+            
+            console.log(`颜色将在 ${delay.toFixed(0)} 毫秒后改变`);
+            
+            // 设置定时器改变颜色
+            timeoutId = setTimeout(() => {
+                if (!testActive) return;
+                
+                // 记录测试开始时间
+                testStartTime = Date.now();
+                
+                // 改变颜色
+                displayText.textContent = "点击！";
+                testArea.className = "test-area react-color";
+                waitingForClick = true;
+            }, delay);
+        }
+        
+        // 处理测试区域点击
+        function handleTestAreaClick() {
+            if (!testActive) return;
+            
+            // 如果颜色还未变红就点击，测试无效
+            if (!waitingForClick) {
+                displayText.textContent = "过早点击！";
+                testArea.className = "test-area waiting-color";
+                testActive = false;
+                startBtn.disabled = false;
+                currentTimeEl.textContent = "无效";
+                
+                // 清除定时器
+                if (timeoutId) clearTimeout(timeoutId);
+                
+                // 2秒后恢复
+                setTimeout(() => {
+                    displayText.textContent = "点击开始按钮进行测试";
+                }, 2000);
+                
+                return;
+            }
+            
+            // 计算反应时间
+            const clickTime = Date.now();
+            reactionTime = (clickTime - testStartTime) / 1000; // 转换为秒
+            
+            // 更新UI
+            displayText.textContent = `反应时间: ${reactionTime.toFixed(3)}秒`;
+            testArea.className = "test-area waiting-color";
+            currentTimeEl.textContent = `${reactionTime.toFixed(3)} 秒`;
+            
+            // 记录测试结果
+            recordTestResult(reactionTime);
+            
+            // 重置状态
+            testActive = false;
+            waitingForClick = false;
+            startBtn.disabled = false;
+        }
+        
+        // 记录测试结果
+        function recordTestResult(time) {
+            // 添加到历史记录
+            testHistory.push(time);
+            
+            // 更新最佳时间
+            if (bestTime === null || time < bestTime) {
+                bestTime = time;
+                bestTimeEl.textContent = `${bestTime.toFixed(3)} 秒`;
+            }
+            
+            // 计算平均时间
+            const sum = testHistory.reduce((a, b) => a + b, 0);
+            averageTime = sum / testHistory.length;
+            averageTimeEl.textContent = `${averageTime.toFixed(3)} 秒`;
+            
+            // 更新测试次数
+            testCountEl.textContent = testHistory.length;
+            
+            // 更新历史记录列表
+            updateHistoryList();
+        }
+        
+        // 更新历史记录列表
+        function updateHistoryList() {
+            // 清空列表
+            historyList.innerHTML = '';
+            
+            // 只显示最近10条记录
+            const recentHistory = testHistory.slice(-10);
+            
+            // 添加历史记录项（从最新到最旧）
+            for (let i = recentHistory.length - 1; i >= 0; i--) {
+                const index = testHistory.length - (recentHistory.length - i);
+                const time = recentHistory[i];
+                
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <span class="history-number">测试 ${index}</span>
+                    <span class="history-time">${time.toFixed(3)} 秒</span>
+                `;
+                
+                historyList.appendChild(li);
+            }
+        }
+        
+        // 重置测试
+        function resetTest() {
+            // 清除定时器
+            if (timeoutId) clearTimeout(timeoutId);
+            
+            // 重置状态
+            testActive = false;
+            waitingForClick = false;
+            reactionTime = 0;
+            
+            // 重置UI
+            displayText.textContent = "点击开始按钮进行测试";
+            testArea.className = "test-area waiting-color";
+            startBtn.disabled = false;
+            currentTimeEl.textContent = "-";
+            
+            // 重置历史记录（可选）
+            // testHistory = [];
+            // bestTime = null;
+            // averageTime = null;
+            // bestTimeEl.textContent = "-";
+            // averageTimeEl.textContent = "-";
+            // testCountEl.textContent = "0";
+            // historyList.innerHTML = "";
+        }
+        
+        // 初始化最佳时间为本地存储中的值
+        const savedBestTime = localStorage.getItem('reactionTestBestTime');
+        if (savedBestTime) {
+            bestTime = parseFloat(savedBestTime);
+            bestTimeEl.textContent = `${bestTime.toFixed(3)} 秒`;
+        }
+        
+        // 保存最佳时间到本地存储
+        function saveBestTime() {
+            if (bestTime !== null) {
+                localStorage.setItem('reactionTestBestTime', bestTime.toString());
+            }
+        }
+        
+        // 页面卸载前保存最佳时间
+        window.addEventListener('beforeunload', saveBestTime);
+    </script>
+</body>
+</html>

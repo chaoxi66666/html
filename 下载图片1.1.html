@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图片下载处理工具</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .section {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            background: #f9f9f9;
+        }
+        
+        h2 {
+            margin-top: 0;
+            color: #333;
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+        
+        .url-input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        
+        .btn {
+            padding: 10px 15px;
+            margin: 5px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .btn-primary {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: #2196F3;
+            color: white;
+        }
+        
+        .btn-success {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        .btn-warning {
+            background: #ff9800;
+            color: white;
+        }
+        
+        .btn-danger {
+            background: #f44336;
+            color: white;
+        }
+        
+        .btn:hover {
+            opacity: 0.9;
+        }
+        
+        .preview-container {
+            text-align: center;
+            margin: 15px 0;
+        }
+        
+        #previewImage {
+            max-width: 100%;
+            max-height: 300px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        .info-label {
+            font-weight: bold;
+            color: #666;
+        }
+        
+        .actions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 5px;
+            min-width: 300px;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .format-options {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        .format-btn {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            text-align: center;
+        }
+        
+        .format-btn.selected {
+            background: #4CAF50;
+            color: white;
+            border-color: #4CAF50;
+        }
+        
+        .quality-control {
+            margin: 15px 0;
+        }
+        
+        .resize-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        .resize-input {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        .history-item {
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .history-url {
+            max-width: 70%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .progress {
+            width: 100%;
+            height: 20px;
+            background: #f0f0f0;
+            border-radius: 10px;
+            margin: 10px 0;
+            overflow: hidden;
+            display: none;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: #4CAF50;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        
+        .message {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            display: none;
+        }
+        
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .message.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+    </style>
+</head>
+<body>
+    <h1>图片下载处理工具</h1>
+    <h2>开发者：River</h2>    
+    <!-- 消息显示 -->
+    <div id="message" class="message"></div>
+    
+    <!-- 进度条 -->
+    <div id="progress" class="progress">
+        <div id="progressBar" class="progress-bar"></div>
+    </div>
+    
+    <!-- 主界面 -->
+    <div class="container">
+        <!-- 输入区域 -->
+        <div class="section">
+            <h2>输入图片URL</h2>
+            <input type="url" id="imageUrl" class="url-input" 
+                   placeholder="请输入图片URL地址" 
+                   value="">
+            
+            <div>
+                <button id="loadBtn" class="btn btn-primary">加载图片</button>
+                <button id="batchBtn" class="btn btn-secondary">批量输入</button>
+            </div>
+            
+            <div style="margin-top: 15px;">
+                <strong>支持格式:</strong> JPG, PNG, GIF, WebP, SVG, BMP<br>
+                <strong>最大尺寸:</strong> 10MB<br>
+                <strong>快捷键:</strong> Enter键加载
+            </div>
+        </div>
+        
+        <!-- 预览区域 -->
+        <div class="section">
+            <h2>图片预览</h2>
+            <div class="preview-container">
+                <img id="previewImage" src="" alt="图片预览">
+                <div id="noPreview" style="color: #999; padding: 20px;">等待加载图片...</div>
+            </div>
+            
+            <div id="imageInfo" style="display: none;">
+                <div class="info-grid">
+                    <div class="info-label">文件名:</div>
+                    <div id="fileName">-</div>
+                    
+                    <div class="info-label">格式:</div>
+                    <div id="fileFormat">-</div>
+                    
+                    <div class="info-label">尺寸:</div>
+                    <div id="fileDimensions">-</div>
+                    
+                    <div class="info-label">大小:</div>
+                    <div id="fileSize">-</div>
+                    
+                    <div class="info-label">状态:</div>
+                    <div id="fileStatus">-</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 功能区域 -->
+    <div class="section">
+        <h2>图片处理功能</h2>
+        <div class="actions-grid">
+            <button id="downloadBtn" class="btn btn-success">下载原始图片</button>
+            <button id="convertBtn" class="btn btn-warning">转换格式</button>
+            <button id="resizeBtn" class="btn btn-secondary">调整尺寸</button>
+            <button id="compressBtn" class="btn btn-primary">压缩图片</button>
+            <button id="cropBtn" class="btn btn-secondary">裁剪图片</button>
+            <button id="watermarkBtn" class="btn btn-primary">添加水印</button>
+            <button id="shareBtn" class="btn btn-success">分享图片</button>
+            <button id="printBtn" class="btn btn-warning">打印图片</button>
+        </div>
+    </div>
+    
+    <!-- 历史记录 -->
+    <div class="section">
+        <h2>历史记录</h2>
+        <div id="historyList">
+            <div style="color: #999; text-align: center; padding: 20px;">暂无历史记录</div>
+        </div>
+    </div>
+    
+    <!-- 隐藏的Canvas -->
+    <canvas id="imageCanvas" style="display: none;"></canvas>
+    
+    <!-- 格式转换模态框 -->
+    <div id="convertModal" class="modal">
+        <div class="modal-content">
+            <h3>转换图片格式</h3>
+            <div class="format-options">
+                <div class="format-btn" data-format="png">PNG</div>
+                <div class="format-btn" data-format="jpg">JPG</div>
+                <div class="format-btn" data-format="webp">WebP</div>
+                <div class="format-btn" data-format="gif">GIF</div>
+                <div class="format-btn" data-format="bmp">BMP</div>
+                <div class="format-btn" data-format="ico">ICO</div>
+            </div>
+            
+            <div class="quality-control">
+                <label>图片质量: <span id="qualityValue">90</span>%</label>
+                <input type="range" id="qualitySlider" min="10" max="100" value="90" style="width: 100%;">
+            </div>
+            
+            <div>
+                <button id="convertConfirmBtn" class="btn btn-success" style="width: 100%;">转换并下载</button>
+                <button onclick="closeModal('convertModal')" class="btn" style="width: 100%; margin-top: 10px;">取消</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 调整尺寸模态框 -->
+    <div id="resizeModal" class="modal">
+        <div class="modal-content">
+            <h3>调整图片尺寸</h3>
+            <div class="resize-controls">
+                <input type="number" id="resizeWidth" class="resize-input" placeholder="宽度 (px)">
+                <input type="number" id="resizeHeight" class="resize-input" placeholder="高度 (px)">
+            </div>
+            
+            <div style="margin: 15px 0;">
+                <label><input type="checkbox" id="keepRatio" checked> 保持宽高比</label>
+            </div>
+            
+            <div>
+                <select id="presetSizes" class="url-input">
+                    <option value="">选择预设尺寸</option>
+                    <option value="1920x1080">全高清 (1920x1080)</option>
+                    <option value="1280x720">高清 (1280x720)</option>
+                    <option value="800x600">中等 (800x600)</option>
+                    <option value="640x480">小尺寸 (640x480)</option>
+                    <option value="320x240">缩略图 (320x240)</option>
+                </select>
+            </div>
+            
+            <div style="margin-top: 15px;">
+                <button id="resizeConfirmBtn" class="btn btn-success" style="width: 100%;">调整尺寸并下载</button>
+                <button onclick="closeModal('resizeModal')" class="btn" style="width: 100%; margin-top: 10px;">取消</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 批量输入模态框 -->
+    <div id="batchModal" class="modal">
+        <div class="modal-content">
+            <h3>批量输入URL</h3>
+            <p>每行输入一个图片URL（最多10个）:</p>
+            <textarea id="batchUrls" rows="8" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;"></textarea>
+            <div style="margin-top: 15px;">
+                <button id="batchLoadBtn" class="btn btn-success" style="width: 100%;">加载所有图片</button>
+                <button onclick="closeModal('batchModal')" class="btn" style="width: 100%; margin-top: 10px;">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量
+        let currentImage = {
+            url: '',
+            blob: null,
+            info: {}
+        };
+        let selectedFormat = 'png';
+        let history = [];
+        
+        // DOM元素
+        const elements = {
+            imageUrl: document.getElementById('imageUrl'),
+            loadBtn: document.getElementById('loadBtn'),
+            previewImage: document.getElementById('previewImage'),
+            noPreview: document.getElementById('noPreview'),
+            imageInfo: document.getElementById('imageInfo'),
+            fileName: document.getElementById('fileName'),
+            fileFormat: document.getElementById('fileFormat'),
+            fileDimensions: document.getElementById('fileDimensions'),
+            fileSize: document.getElementById('fileSize'),
+            fileStatus: document.getElementById('fileStatus'),
+            message: document.getElementById('message'),
+            progress: document.getElementById('progress'),
+            progressBar: document.getElementById('progressBar'),
+            canvas: document.getElementById('imageCanvas'),
+            ctx: document.getElementById('imageCanvas').getContext('2d'),
+            historyList: document.getElementById('historyList')
+        };
+        
+        // 初始化
+        function init() {
+            // 加载历史记录
+            loadHistory();
+            
+            // 绑定事件
+            elements.loadBtn.addEventListener('click', loadImage);
+            elements.imageUrl.addEventListener('keypress', e => {
+                if (e.key === 'Enter') loadImage();
+            });
+            
+            // 功能按钮事件
+            document.getElementById('downloadBtn').addEventListener('click', downloadOriginal);
+            document.getElementById('convertBtn').addEventListener('click', () => openModal('convertModal'));
+            document.getElementById('resizeBtn').addEventListener('click', () => openModal('resizeModal'));
+            document.getElementById('compressBtn').addEventListener('click', compressImage);
+            document.getElementById('batchBtn').addEventListener('click', () => openModal('batchModal'));
+            document.getElementById('cropBtn').addEventListener('click', () => showMessage('裁剪功能开发中', 'warning'));
+            document.getElementById('watermarkBtn').addEventListener('click', () => showMessage('水印功能开发中', 'warning'));
+            document.getElementById('shareBtn').addEventListener('click', shareImage);
+            document.getElementById('printBtn').addEventListener('click', printImage);
+            
+            // 转换模态框事件
+            document.querySelectorAll('.format-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.format-btn').forEach(b => b.classList.remove('selected'));
+                    this.classList.add('selected');
+                    selectedFormat = this.dataset.format;
+                });
+            });
+            
+            document.getElementById('qualitySlider').addEventListener('input', function() {
+                document.getElementById('qualityValue').textContent = this.value;
+            });
+            
+            document.getElementById('convertConfirmBtn').addEventListener('click', convertImage);
+            
+            // 调整尺寸模态框事件
+            document.getElementById('presetSizes').addEventListener('change', function() {
+                if (this.value) {
+                    const [width, height] = this.value.split('x').map(Number);
+                    document.getElementById('resizeWidth').value = width;
+                    document.getElementById('resizeHeight').value = height;
+                }
+            });
+            
+            document.getElementById('resizeConfirmBtn').addEventListener('click', resizeImage);
+            
+            // 批量输入事件
+            document.getElementById('batchLoadBtn').addEventListener('click', loadBatchImages);
+            
+            // 默认选中PNG
+            document.querySelector('.format-btn[data-format="png"]').classList.add('selected');
+            
+            // 加载示例图片
+            setTimeout(loadImage, 500);
+        }
+        
+        // 加载图片
+        async function loadImage() {
+            const url = elements.imageUrl.value.trim();
+            
+            if (!url) {
+                showMessage('请输入图片URL', 'warning');
+                return;
+            }
+            
+            if (!isValidUrl(url)) {
+                showMessage('URL格式不正确', 'error');
+                return;
+            }
+            
+            showProgress(10);
+            showMessage('正在加载图片...', 'warning');
+            
+            try {
+                // 获取图片
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                showProgress(40);
+                
+                // 获取Blob
+                const blob = await response.blob();
+                if (!blob.type.startsWith('image/')) throw new Error('不是图片文件');
+                
+                showProgress(60);
+                
+                // 更新当前图片
+                currentImage.url = url;
+                currentImage.blob = blob;
+                
+                // 创建预览URL
+                const objectUrl = URL.createObjectURL(blob);
+                elements.previewImage.src = objectUrl;
+                elements.previewImage.style.display = 'block';
+                elements.noPreview.style.display = 'none';
+                
+                // 等待图片加载完成
+                await new Promise((resolve, reject) => {
+                    elements.previewImage.onload = resolve;
+                    elements.previewImage.onerror = reject;
+                });
+                
+                showProgress(80);
+                
+                // 提取图片信息
+                await extractImageInfo();
+                
+                // 添加到历史记录
+                addToHistory(url);
+                
+                showProgress(100);
+                showMessage('图片加载成功', 'success');
+                
+            } catch (error) {
+                console.error('加载失败:', error);
+                showMessage(`加载失败: ${error.message}`, 'error');
+                elements.previewImage.style.display = 'none';
+                elements.noPreview.style.display = 'block';
+                elements.imageInfo.style.display = 'none';
+            } finally {
+                setTimeout(hideProgress, 500);
+            }
+        }
+        
+        // 提取图片信息
+        async function extractImageInfo() {
+            const blob = currentImage.blob;
+            
+            // 基本信息
+            const size = formatSize(blob.size);
+            const type = blob.type.split('/')[1].toUpperCase();
+            const name = getFileNameFromUrl(currentImage.url);
+            
+            // 图片尺寸
+            const width = elements.previewImage.naturalWidth;
+            const height = elements.previewImage.naturalHeight;
+            
+            // 更新显示
+            elements.fileName.textContent = name;
+            elements.fileFormat.textContent = type;
+            elements.fileDimensions.textContent = `${width} × ${height}`;
+            elements.fileSize.textContent = size;
+            elements.fileStatus.textContent = '加载完成';
+            elements.fileStatus.style.color = '#4CAF50';
+            
+            // 显示信息区域
+            elements.imageInfo.style.display = 'block';
+            
+            // 保存信息
+            currentImage.info = { name, type, width, height, size: blob.size };
+            
+            // 设置Canvas
+            elements.canvas.width = width;
+            elements.canvas.height = height;
+            elements.ctx.drawImage(elements.previewImage, 0, 0);
+        }
+        
+        // 下载原始图片
+        function downloadOriginal() {
+            if (!currentImage.blob) {
+                showMessage('请先加载图片', 'warning');
+                return;
+            }
+            
+            const blobUrl = URL.createObjectURL(currentImage.blob);
+            const name = currentImage.info.name || `image_${Date.now()}.${currentImage.info.type.toLowerCase()}`;
+            
+            downloadFile(blobUrl, name);
+            showMessage('开始下载原始图片', 'success');
+        }
+        
+        // 转换图片格式
+        async function convertImage() {
+            if (!currentImage.blob) {
+                showMessage('请先加载图片', 'warning');
+                return;
+            }
+            
+            const quality = parseInt(document.getElementById('qualitySlider').value) / 100;
+            
+            showProgress(20);
+            showMessage('正在转换格式...', 'warning');
+            
+            try {
+                // 确定MIME类型和扩展名
+                let mimeType, extension;
+                switch (selectedFormat) {
+                    case 'png': mimeType = 'image/png'; extension = 'png'; break;
+                    case 'jpg': mimeType = 'image/jpeg'; extension = 'jpg'; break;
+                    case 'webp': mimeType = 'image/webp'; extension = 'webp'; break;
+                    case 'gif': mimeType = 'image/gif'; extension = 'gif'; break;
+                    case 'bmp': mimeType = 'image/bmp'; extension = 'bmp'; break;
+                    case 'ico': mimeType = 'image/x-icon'; extension = 'ico'; break;
+                    default: mimeType = 'image/png'; extension = 'png';
+                }
+                
+                showProgress(60);
+                
+                // 转换图片
+                let dataUrl;
+                if (selectedFormat === 'jpg' || selectedFormat === 'webp') {
+                    dataUrl = elements.canvas.toDataURL(mimeType, quality);
+                } else {
+                    dataUrl = elements.canvas.toDataURL(mimeType);
+                }
+                
+                showProgress(90);
+                
+                // 下载
+                const fileName = `converted_${Date.now()}.${extension}`;
+                downloadFile(dataUrl, fileName);
+                
+                closeModal('convertModal');
+                showProgress(100);
+                showMessage(`已转换为${selectedFormat.toUpperCase()}格式`, 'success');
+                
+            } catch (error) {
+                showMessage(`转换失败: ${error.message}`, 'error');
+            } finally {
+                setTimeout(hideProgress, 500);
+            }
+        }
+        
+        // 调整图片尺寸
+        async function resizeImage() {
+            if (!currentImage.blob) {
+                showMessage('请先加载图片', 'warning');
+                return;
+            }
+            
+            let width = parseInt(document.getElementById('resizeWidth').value);
+            let height = parseInt(document.getElementById('resizeHeight').value);
+            const keepRatio = document.getElementById('keepRatio').checked;
+            
+            if (!width || !height || width <= 0 || height <= 0) {
+                showMessage('请输入有效尺寸', 'error');
+                return;
+            }
+            
+            showProgress(20);
+            showMessage('正在调整尺寸...', 'warning');
+            
+            try {
+                // 保持宽高比
+                if (keepRatio) {
+                    const ratio = currentImage.info.width / currentImage.info.height;
+                    if (width && !height) {
+                        height = Math.round(width / ratio);
+                    } else if (height && !width) {
+                        width = Math.round(height * ratio);
+                    }
+                }
+                
+                showProgress(60);
+                
+                // 创建临时Canvas
+                const tempCanvas = document.createElement('canvas');
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCanvas.width = width;
+                tempCanvas.height = height;
+                
+                // 绘制调整后的图片
+                tempCtx.drawImage(elements.previewImage, 0, 0, width, height);
+                
+                showProgress(90);
+                
+                // 下载
+                const dataUrl = tempCanvas.toDataURL('image/png');
+                const fileName = `resized_${width}x${height}_${Date.now()}.png`;
+                
+                downloadFile(dataUrl, fileName);
+                
+                closeModal('resizeModal');
+                showProgress(100);
+                showMessage(`已调整为${width}x${height}`, 'success');
+                
+            } catch (error) {
+                showMessage(`调整失败: ${error.message}`, 'error');
+            } finally {
+                setTimeout(hideProgress, 500);
+            }
+        }
+        
+        // 压缩图片
+        async function compressImage() {
+            if (!currentImage.blob) {
+                showMessage('请先加载图片', 'warning');
+                return;
+            }
+            
+            showProgress(30);
+            showMessage('正在压缩图片...', 'warning');
+            
+            try {
+                // 使用中等质量压缩
+                const quality = 0.7;
+                const dataUrl = elements.canvas.toDataURL('image/jpeg', quality);
+                
+                showProgress(80);
+                
+                // 计算压缩率
+                const originalSize = currentImage.blob.size;
+                const compressedSize = Math.round((dataUrl.length * 3) / 4);
+                const ratio = Math.round((1 - compressedSize / originalSize) * 100);
+                
+                // 下载
+                const fileName = `compressed_${ratio}%_${Date.now()}.jpg`;
+                downloadFile(dataUrl, fileName);
+                
+                showProgress(100);
+                showMessage(`压缩完成，压缩率: ${ratio}%`, 'success');
+                
+            } catch (error) {
+                showMessage(`压缩失败: ${error.message}`, 'error');
+            } finally {
+                setTimeout(hideProgress, 500);
+            }
+        }
+        
+        // 批量加载图片
+        async function loadBatchImages() {
+            const urlsText = document.getElementById('batchUrls').value.trim();
+            
+            if (!urlsText) {
+                showMessage('请输入URL', 'warning');
+                return;
+            }
+            
+            const urls = urlsText.split('\n')
+                .map(url => url.trim())
+                .filter(url => url && isValidUrl(url))
+                .slice(0, 10);
+            
+            if (urls.length === 0) {
+                showMessage('没有有效URL', 'error');
+                return;
+            }
+            
+            closeModal('batchModal');
+            
+            // 加载第一个图片
+            elements.imageUrl.value = urls[0];
+            await loadImage();
+            
+            // 添加其他到历史记录
+            for (let i = 1; i < urls.length; i++) {
+                addToHistory(urls[i]);
+            }
+            
+            showMessage(`已加载${urls.length}张图片`, 'success');
+        }
+        
+        // 分享图片
+        function shareImage() {
+            if (!currentImage.blob) {
+                showMessage('请先加载图片', 'warning');
+                return;
+            }
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: '图片分享',
+                    text: '分享一张图片',
+                    url: currentImage.url
+                }).catch(() => {
+                    copyToClipboard(currentImage.url);
+                    showMessage('URL已复制到剪贴板', 'success');
+                });
+            } else {
+                copyToClipboard(currentImage.url);
+                showMessage('URL已复制到剪贴板', 'success');
+            }
+        }
+        
+        // 打印图片
+        function printImage() {
+            if (!currentImage.blob) {
+                showMessage('请先加载图片', 'warning');
+                return;
+            }
+            
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <html>
+                <head><title>打印图片</title></head>
+                <body style="text-align: center; padding: 50px;">
+                    <img src="${elements.previewImage.src}" style="max-width: 100%; max-height: 90vh;">
+                    <script>
+                        window.onload = function() {
+                            window.print();
+                            setTimeout(() => window.close(), 1000);
+                        }
+                    <\/script>
+                </body>
+                </html>
+            `);
+        }
+        
+        // 工具函数
+        function isValidUrl(string) {
+            try {
+                new URL(string);
+                return true;
+            } catch (_) {
+                return false;
+            }
+        }
+        
+        function getFileNameFromUrl(url) {
+            try {
+                const urlObj = new URL(url);
+                const path = urlObj.pathname;
+                return path.substring(path.lastIndexOf('/') + 1) || 'image';
+            } catch (_) {
+                return 'image';
+            }
+        }
+        
+        function formatSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+        
+        function downloadFile(url, filename) {
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            if (url.startsWith('blob:')) {
+                setTimeout(() => URL.revokeObjectURL(url), 100);
+            }
+        }
+        
+        function copyToClipboard(text) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+        }
+        
+        function showMessage(text, type) {
+            elements.message.textContent = text;
+            elements.message.className = `message ${type}`;
+            elements.message.style.display = 'block';
+            
+            setTimeout(() => {
+                elements.message.style.display = 'none';
+            }, 3000);
+        }
+        
+        function showProgress(percent) {
+            elements.progress.style.display = 'block';
+            elements.progressBar.style.width = percent + '%';
+        }
+        
+        function hideProgress() {
+            elements.progress.style.display = 'none';
+            elements.progressBar.style.width = '0%';
+        }
+        
+        function openModal(id) {
+            document.getElementById(id).style.display = 'flex';
+        }
+        
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+        
+        // 历史记录功能
+        function addToHistory(url) {
+            if (!history.some(item => item.url === url)) {
+                history.unshift({
+                    url,
+                    time: new Date().toLocaleString()
+                });
+                
+                if (history.length > 20) {
+                    history = history.slice(0, 20);
+                }
+                
+                saveHistory();
+                updateHistoryUI();
+            }
+        }
+        
+        function updateHistoryUI() {
+            if (history.length === 0) {
+                elements.historyList.innerHTML = '<div style="color: #999; text-align: center; padding: 20px;">暂无历史记录</div>';
+                return;
+            }
+            
+            elements.historyList.innerHTML = history.map((item, index) => `
+                <div class="history-item">
+                    <div class="history-url" title="${item.url}">
+                        ${index + 1}. ${item.url.substring(0, 50)}${item.url.length > 50 ? '...' : ''}
+                    </div>
+                    <div>
+                        <small>${item.time}</small>
+                        <button onclick="loadHistoryItem('${item.url}')" style="margin-left: 10px; background: none; border: none; color: #2196F3; cursor: pointer;">加载</button>
+                        <button onclick="removeHistoryItem('${item.url}')" style="background: none; border: none; color: #f44336; cursor: pointer;">删除</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function loadHistoryItem(url) {
+            elements.imageUrl.value = url;
+            loadImage();
+        }
+        
+        function removeHistoryItem(url) {
+            history = history.filter(item => item.url !== url);
+            saveHistory();
+            updateHistoryUI();
+        }
+        
+        function saveHistory() {
+            try {
+                localStorage.setItem('imageHistory', JSON.stringify(history));
+            } catch (e) {
+                console.error('保存历史记录失败:', e);
+            }
+        }
+        
+        function loadHistory() {
+            try {
+                const saved = localStorage.getItem('imageHistory');
+                if (saved) {
+                    history = JSON.parse(saved);
+                    updateHistoryUI();
+                }
+            } catch (e) {
+                console.error('加载历史记录失败:', e);
+            }
+        }
+        
+        // 全局函数
+        window.loadHistoryItem = loadHistoryItem;
+        window.removeHistoryItem = removeHistoryItem;
+        window.closeModal = closeModal;
+        
+        // 启动
+        window.onload = init;
+    </script>
+</body>
+</html>

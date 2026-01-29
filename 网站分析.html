@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>网页内容分析工具</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            line-height: 1.5;
+        }
+        
+        h1 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        .input-area {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 4px;
+        }
+        
+        .url-input {
+            width: 70%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .analyze-btn {
+            padding: 9px 15px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .analyze-btn:hover {
+            background: #0056b3;
+        }
+        
+        .loading {
+            display: none;
+            margin: 10px 0;
+            color: #666;
+        }
+        
+        .error {
+            display: none;
+            padding: 10px;
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        .summary-item {
+            padding: 10px;
+            background: #e9ecef;
+            border-radius: 4px;
+            text-align: center;
+        }
+        
+        .summary-count {
+            font-size: 24px;
+            font-weight: bold;
+            color: #007bff;
+        }
+        
+        .section {
+            margin: 20px 0;
+            border-top: 1px solid #ddd;
+            padding-top: 15px;
+        }
+        
+        .section-title {
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .item-list {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+        }
+        
+        .item {
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+            font-family: monospace;
+            font-size: 13px;
+        }
+        
+        .item:last-child {
+            border-bottom: none;
+        }
+        
+        .item-index {
+            display: inline-block;
+            width: 25px;
+            color: #666;
+        }
+        
+        .text-content {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+            background: #f9f9f9;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <h1>网页内容分析工具</h1>
+    <h2>开发者：River</h2>
+    
+    <div class="input-area">
+        <input type="url" class="url-input" id="urlInput" placeholder="https://example.com" value="">
+        <button class="analyze-btn" id="analyzeBtn">分析网页</button>
+        
+        <div class="loading" id="loadingIndicator">正在分析...</div>
+        <div class="error" id="errorMessage"></div>
+    </div>
+    
+    <div id="results" style="display: none;">
+        <div class="summary" id="summaryContainer"></div>
+        
+        <div class="section" id="imagesSection">
+            <h3 class="section-title">图片 (<span id="imageCount">0</span>)</h3>
+            <div class="item-list" id="imagesContainer"></div>
+        </div>
+        
+        <div class="section" id="linksSection">
+            <h3 class="section-title">超链接 (<span id="linkCount">0</span>)</h3>
+            <div class="item-list" id="linksContainer"></div>
+        </div>
+        
+        <div class="section" id="videosSection">
+            <h3 class="section-title">视频 (<span id="videoCount">0</span>)</h3>
+            <div class="item-list" id="videosContainer"></div>
+        </div>
+        
+        <div class="section" id="textSection">
+            <h3 class="section-title">文本内容</h3>
+            <div class="text-content" id="textContainer"></div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('analyzeBtn').addEventListener('click', analyzeWebpage);
+        document.getElementById('urlInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') analyzeWebpage();
+        });
+
+        async function analyzeWebpage() {
+            const url = document.getElementById('urlInput').value.trim();
+            const errorEl = document.getElementById('errorMessage');
+            const loadingEl = document.getElementById('loadingIndicator');
+            const resultsEl = document.getElementById('results');
+            
+            // 验证URL
+            if (!url) {
+                showError('请输入URL');
+                return;
+            }
+            
+            if (!url.startsWith('http')) {
+                showError('URL必须以http://或https://开头');
+                return;
+            }
+            
+            // 显示加载状态
+            loadingEl.style.display = 'block';
+            errorEl.style.display = 'none';
+            resultsEl.style.display = 'none';
+            
+            try {
+                // 获取网页内容
+                const response = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
+                if (!response.ok) throw new Error('网络请求失败');
+                
+                const data = await response.json();
+                const parser = new DOMParser();
+                const htmlDoc = parser.parseFromString(data.contents, 'text/html');
+                
+                // 分析内容
+                const images = extractImages(htmlDoc, url);
+                const links = extractLinks(htmlDoc, url);
+                const videos = extractVideos(htmlDoc, url);
+                const text = extractText(htmlDoc);
+                
+                // 显示结果
+                displayResults(images, links, videos, text);
+                
+            } catch (error) {
+                showError('获取网页失败: ' + error.message);
+            } finally {
+                loadingEl.style.display = 'none';
+            }
+        }
+
+        function extractImages(doc, baseUrl) {
+            const images = [];
+            doc.querySelectorAll('img').forEach((img, i) => {
+                let src = img.src || img.getAttribute('data-src') || '';
+                if (src && !src.startsWith('http')) {
+                    try {
+                        src = new URL(src, baseUrl).href;
+                    } catch {
+                        src = '';
+                    }
+                }
+                images.push({
+                    src: src || '无链接',
+                    alt: img.alt || '无描述'
+                });
+            });
+            return images;
+        }
+
+        function extractLinks(doc, baseUrl) {
+            const links = [];
+            doc.querySelectorAll('a').forEach((link, i) => {
+                let href = link.href || link.getAttribute('href') || '';
+                if (href && !href.startsWith('http') && !href.startsWith('#')) {
+                    try {
+                        href = new URL(href, baseUrl).href;
+                    } catch {
+                        href = '';
+                    }
+                }
+                if (href && href !== '#') {
+                    links.push({
+                        href: href,
+                        text: link.textContent.trim().substring(0, 50) || '无文本'
+                    });
+                }
+            });
+            return links;
+        }
+
+        function extractVideos(doc, baseUrl) {
+            const videos = [];
+            doc.querySelectorAll('video, iframe').forEach((video, i) => {
+                let src = video.src || video.getAttribute('src') || '';
+                if (src && !src.startsWith('http')) {
+                    try {
+                        src = new URL(src, baseUrl).href;
+                    } catch {
+                        src = '';
+                    }
+                }
+                if (src) {
+                    const type = video.tagName === 'VIDEO' ? 'HTML5视频' : '嵌入式视频';
+                    videos.push({
+                        src: src,
+                        type: type
+                    });
+                }
+            });
+            return videos;
+        }
+
+        function extractText(doc) {
+            return doc.body.textContent
+                .replace(/\s+/g, ' ')
+                .trim()
+                .substring(0, 1500);
+        }
+
+        function displayResults(images, links, videos, text) {
+            // 更新计数
+            document.getElementById('imageCount').textContent = images.length;
+            document.getElementById('linkCount').textContent = links.length;
+            document.getElementById('videoCount').textContent = videos.length;
+            
+            // 显示摘要
+            const summaryHtml = `
+                <div class="summary-item">
+                    <div class="summary-count">${images.length}</div>
+                    <div>图片</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-count">${links.length}</div>
+                    <div>超链接</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-count">${videos.length}</div>
+                    <div>视频</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-count">${text.length > 0 ? '有' : '无'}</div>
+                    <div>文本内容</div>
+                </div>
+            `;
+            document.getElementById('summaryContainer').innerHTML = summaryHtml;
+            
+            // 显示图片
+            let imagesHtml = '';
+            images.forEach((img, i) => {
+                imagesHtml += `
+                    <div class="item">
+                        <span class="item-index">${i+1}.</span>
+                        <a href="${img.src}" target="_blank">${img.src.substring(0, 60)}</a>
+                        ${img.alt ? ` (${img.alt})` : ''}
+                    </div>
+                `;
+            });
+            document.getElementById('imagesContainer').innerHTML = imagesHtml || '<div class="item">无图片</div>';
+            document.getElementById('imagesSection').style.display = images.length ? 'block' : 'none';
+            
+            // 显示链接
+            let linksHtml = '';
+            links.slice(0, 100).forEach((link, i) => {
+                linksHtml += `
+                    <div class="item">
+                        <span class="item-index">${i+1}.</span>
+                        <a href="${link.href}" target="_blank">${link.href.substring(0, 60)}</a>
+                        ${link.text ? ` - ${link.text}` : ''}
+                    </div>
+                `;
+            });
+            if (links.length > 100) {
+                linksHtml += `<div class="item">... 还有 ${links.length - 100} 个链接未显示</div>`;
+            }
+            document.getElementById('linksContainer').innerHTML = linksHtml || '<div class="item">无超链接</div>';
+            document.getElementById('linksSection').style.display = links.length ? 'block' : 'none';
+            
+            // 显示视频
+            let videosHtml = '';
+            videos.forEach((video, i) => {
+                videosHtml += `
+                    <div class="item">
+                        <span class="item-index">${i+1}.</span>
+                        ${video.type}: 
+                        <a href="${video.src}" target="_blank">${video.src.substring(0, 60)}</a>
+                    </div>
+                `;
+            });
+            document.getElementById('videosContainer').innerHTML = videosHtml || '<div class="item">无视频</div>';
+            document.getElementById('videosSection').style.display = videos.length ? 'block' : 'none';
+            
+            // 显示文本
+            document.getElementById('textContainer').textContent = text || '无文本内容';
+            document.getElementById('textSection').style.display = text ? 'block' : 'none';
+            
+            // 显示结果区域
+            document.getElementById('results').style.display = 'block';
+        }
+
+        function showError(message) {
+            const errorEl = document.getElementById('errorMessage');
+            errorEl.textContent = message;
+            errorEl.style.display = 'block';
+            document.getElementById('loadingIndicator').style.display = 'none';
+        }
+    </script>
+</body>
+</html>

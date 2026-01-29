@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>北京时间实时显示</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            text-align: center;
+            background-color: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            max-width: 900px;
+            width: 100%;
+        }
+        
+        .title {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            color: #4cc9f0;
+            text-shadow: 0 0 10px rgba(76, 201, 240, 0.5);
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            margin-bottom: 40px;
+            color: #a5b4cb;
+        }
+        
+        .datetime-container {
+            margin: 30px 0;
+        }
+        
+        .date-section, .time-section {
+            margin-bottom: 30px;
+        }
+        
+        .section-title {
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            color: #72efdd;
+        }
+        
+        .date-display {
+            font-size: 3.5rem;
+            font-weight: bold;
+            color: #ffffff;
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+        }
+        
+        .time-display {
+            font-size: 5rem;
+            font-weight: bold;
+            color: #ffd166;
+            text-shadow: 0 0 20px rgba(255, 209, 102, 0.5);
+        }
+        
+        .separator {
+            font-size: 5rem;
+            color: #ef476f;
+            margin: 0 5px;
+        }
+        
+        .second {
+            color: #06d6a0;
+        }
+        
+        .millisecond {
+            font-size: 2.5rem;
+            color: #a5b4cb;
+            margin-left: 10px;
+        }
+        
+        .info {
+            margin-top: 40px;
+            font-size: 1rem;
+            color: #a5b4cb;
+            line-height: 1.6;
+        }
+        
+        .highlight {
+            color: #ffd166;
+        }
+        
+        .update-info {
+            margin-top: 15px;
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+        
+        @media (max-width: 768px) {
+            .title {
+                font-size: 2rem;
+            }
+            
+            .date-display {
+                font-size: 2.5rem;
+            }
+            
+            .time-display {
+                font-size: 3.5rem;
+            }
+            
+            .separator {
+                font-size: 3.5rem;
+            }
+            
+            .container {
+                padding: 25px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .title {
+                font-size: 1.8rem;
+            }
+            
+            .date-display {
+                font-size: 2rem;
+            }
+            
+            .time-display {
+                font-size: 2.8rem;
+            }
+            
+            .separator {
+                font-size: 2.8rem;
+            }
+            
+            .millisecond {
+                font-size: 1.8rem;
+            }
+        }
+        
+        /* 跨年倒计时特殊效果 */
+        .new-year-effect {
+            animation: pulse 1s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">北京时间实时显示</h1>
+        <p class="subtitle">中国标准时间 (UTC+8)</p>
+        
+        <div class="datetime-container">
+            <div class="date-section">
+                <div class="section-title">当前日期</div>
+                <div id="dateDisplay" class="date-display"></div>
+            </div>
+            
+            <div class="time-section">
+                <div class="section-title">当前时间</div>
+                <div id="timeDisplay" class="time-display">
+                    <span id="hour">00</span>
+                    <span class="separator">:</span>
+                    <span id="minute">00</span>
+                    <span class="separator">:</span>
+                    <span id="second" class="second">00</span>
+                    <span id="millisecond" class="millisecond"></span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="info">
+            <p>本页面显示的时间为<span class="highlight">北京时间（中国标准时间 CST, UTC+8）</span>，根据您的设备时间自动校准并实时更新。</p>
+            <p class="update-info">最后同步时间: <span id="lastSync">正在同步...</span></p>
+        </div>
+    </div>
+
+    <script>
+        // 更新时间的函数
+        function updateTime() {
+            const now = new Date();
+            
+            // 转换为北京时间 (UTC+8)
+            const beijingTime = new Date(now.getTime() + (8 * 60 * 60 * 1000));
+            
+            // 获取日期部分
+            const year = beijingTime.getUTCFullYear();
+            const month = beijingTime.getUTCMonth() + 1; // 月份从0开始
+            const day = beijingTime.getUTCDate();
+            
+            // 获取时间部分
+            const hours = beijingTime.getUTCHours();
+            const minutes = beijingTime.getUTCMinutes();
+            const seconds = beijingTime.getUTCSeconds();
+            const milliseconds = beijingTime.getUTCMilliseconds();
+            
+            // 格式化日期和时间
+            const dateString = `${year}年${month.toString().padStart(2, '0')}月${day.toString().padStart(2, '0')}日`;
+            const hourString = hours.toString().padStart(2, '0');
+            const minuteString = minutes.toString().padStart(2, '0');
+            const secondString = seconds.toString().padStart(2, '0');
+            const millisecondString = milliseconds.toString().padStart(3, '0');
+            
+            // 更新DOM元素
+            document.getElementById('dateDisplay').textContent = dateString;
+            document.getElementById('hour').textContent = hourString;
+            document.getElementById('minute').textContent = minuteString;
+            document.getElementById('second').textContent = secondString;
+            document.getElementById('millisecond').textContent = millisecondString;
+            
+            // 更新同步时间
+            document.getElementById('lastSync').textContent = 
+                `${hourString}:${minuteString}:${secondString}.${millisecondString}`;
+            
+            // 跨年特殊效果
+            checkNewYearEffect(year, month, day, hours, minutes, seconds);
+        }
+        
+        // 检查是否接近跨年时刻并应用特殊效果
+        function checkNewYearEffect(year, month, day, hours, minutes, seconds) {
+            const dateDisplay = document.getElementById('dateDisplay');
+            const timeDisplay = document.getElementById('timeDisplay');
+            
+            // 判断是否为12月31日23:59分
+            if (month === 12 && day === 31 && hours === 23 && minutes === 59) {
+                if (seconds >= 50) {
+                    // 最后10秒开始闪烁效果
+                    dateDisplay.classList.add('new-year-effect');
+                    timeDisplay.classList.add('new-year-effect');
+                    
+                    // 改变颜色为跨年主题
+                    timeDisplay.style.color = '#ef476f';
+                    document.querySelectorAll('.separator').forEach(el => {
+                        el.style.color = '#ffd166';
+                    });
+                    
+                    // 每秒改变一次背景色
+                    const hue = (seconds * 6) % 360;
+                    document.body.style.background = `linear-gradient(135deg, hsl(${hue}, 70%, 10%) 0%, hsl(${hue + 30}, 70%, 15%) 100%)`;
+                }
+            } else {
+                // 移除特殊效果
+                dateDisplay.classList.remove('new-year-effect');
+                timeDisplay.classList.remove('new-year-effect');
+                timeDisplay.style.color = '';
+                document.querySelectorAll('.separator').forEach(el => {
+                    el.style.color = '';
+                });
+            }
+        }
+        
+        // 页面加载后立即更新时间
+        updateTime();
+        
+        // 每50毫秒更新一次时间，使显示更加流畅
+        setInterval(updateTime, 50);
+        
+        // 添加页面加载完成后的初始动画
+        window.addEventListener('load', function() {
+            document.querySelector('.container').style.opacity = '0';
+            document.querySelector('.container').style.transform = 'translateY(20px)';
+            
+            setTimeout(() => {
+                document.querySelector('.container').style.transition = 'opacity 0.8s ease, transform 0.8s ease';
+                document.querySelector('.container').style.opacity = '1';
+                document.querySelector('.container').style.transform = 'translateY(0)';
+            }, 100);
+        });
+    </script>
+</body>
+</html>

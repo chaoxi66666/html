@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>数据结构教学动画 — 数组/链表/队列/栈/树 可视化</title>
+  <style>
+    /* 视觉主题与布局 */
+    :root{--bg:#0f1724;--card:#0b1220;--accent:#06b6d4;--muted:#94a3b8;--glass: rgba(255,255,255,0.03)}
+    html,body{height:100%;margin:0;font-family:Inter, system-ui, -apple-system, "Helvetica Neue", Arial;color:#e6eef8;background:linear-gradient(180deg,#071028 0%, #081226 60%);}
+    .app{display:grid;grid-template-columns:360px 1fr;gap:18px;padding:18px;height:100vh;box-sizing:border-box}
+    .panel{background:var(--card);border-radius:12px;padding:14px;box-shadow:0 6px 20px rgba(2,6,23,0.6);overflow:auto}
+    header{display:flex;align-items:center;gap:12px}
+    h1{font-size:18px;margin:0}
+    .sidebar{display:flex;flex-direction:column;gap:12px}
+    .controls{display:flex;flex-direction:column;gap:8px}
+    select,input[type=range],button{width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:inherit}
+    .muted{color:var(--muted);font-size:13px}
+    .playbar{display:flex;gap:8px;align-items:center}
+    .canvas-wrap{position:relative;height:100%;}
+    #canvas{width:100%;height:100%;background:linear-gradient(180deg, rgba(6,11,20,0.4), rgba(4,8,16,0.2));border-radius:12px;display:block}
+    .info{margin-top:8px;font-size:13px;color:var(--muted);line-height:1.5}
+    .row{display:flex;gap:8px}
+    .kbd{background:var(--glass);padding:6px 8px;border-radius:6px;font-family:monospace}
+    .legend{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .legend .item{display:flex;gap:6px;align-items:center}
+    .dot{width:14px;height:14px;border-radius:3px;background:var(--accent)}
+    /* node styles */
+    .node{fill:#0b1220;stroke:#8fbfd2;stroke-width:1.5}
+    .node-text{fill:#e6eef8;font-size:13px;text-anchor:middle}
+    .pointer{stroke:#94a3b8;stroke-width:2;marker-end:url(#arrow)}
+    .highlight{stroke:#ffd166;stroke-width:3}
+    .ghost{opacity:0.35}
+    /* small screens */
+    @media(max-width:900px){.app{grid-template-columns:1fr;grid-auto-rows:auto;height:auto;padding:10px}}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="panel sidebar">
+      <header>
+        <div style="width:44px;height:44px;border-radius:8px;background:linear-gradient(135deg,var(--accent),#7c3aed)"></div>
+        <div>
+          <h1>数据结构教学动画</h1>
+          <div class="muted">数组 · 链表 · 队列 · 栈 · 树（交互 + 步进 + 代码演示）</div>
+        </div>
+      </header>
+
+      <div class="controls">
+        <label>选择结构
+          <select id="ds-select">
+            <option value="array">数组 (Array)</option>
+            <option value="linkedlist">单向链表 (Linked List)</option>
+            <option value="stack">栈 (Stack)</option>
+            <option value="queue">队列 (Queue)</option>
+            <option value="tree">二叉树 (Binary Tree)</option>
+          </select>
+        </label>
+
+        <label>操作
+          <select id="op-select">
+            <!-- 每个结构的操作在JS中动态填充 -->
+          </select>
+        </label>
+
+        <div class="row">
+          <input id="value-input" placeholder="输入值（如: 42 或 key）" />
+        </div>
+
+        <div class="playbar">
+          <button id="step-back">⏮ 上一步</button>
+          <button id="play">▶️ 播放</button>
+          <button id="pause">⏸ 暂停</button>
+          <button id="step">⏭ 下一步</button>
+        </div>
+
+        <label>速度 <input id="speed" type="range" min="50" max="2000" value="600" /></label>
+
+        <div class="muted info">
+          提示：选择结构并选择左侧操作。使用“播放”自动执行步骤，或使用“下一步/上一步”逐步观察。
+        </div>
+
+        <div style="border-top:1px solid rgba(255,255,255,0.03);padding-top:8px;margin-top:8px">
+          <div class="muted">图例</div>
+          <div class="legend">
+            <div class="item"><div class="dot"></div> 节点/数组格</div>
+            <div class="item"><div style="width:14px;height:14px;border-radius:2px;background:#ffd166"></div> 高亮（当前操作）</div>
+            <div class="item"><div style="width:14px;height:14px;border-radius:2px;background:#94a3b8"></div> 指针/链接</div>
+          </div>
+        </div>
+
+        <div style="border-top:1px solid rgba(255,255,255,0.03);padding-top:8px;margin-top:8px">
+          <div class="muted">辅助：显示伪代码与运行复杂度</div>
+          <pre id="pseudocode" style="background:var(--glass);padding:8px;border-radius:8px;overflow:auto;max-height:240px"></pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel canvas-wrap">
+      <svg id="canvas" viewBox="0 0 1200 720" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <marker id="arrow" markerWidth="10" markerHeight="10" refX="10" refY="5" orient="auto">
+            <path d="M0,0 L10,5 L0,10 z" fill="#94a3b8"></path>
+          </marker>
+        </defs>
+        <!-- 动态绘制区 -->
+      </svg>
+      <div style="position:absolute;right:18px;bottom:18px;background:rgba(2,6,23,0.6);padding:10px;border-radius:10px;color:var(--muted);font-size:13px">
+        当前结构：<span id="cur-structure">数组</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /*********** 数据结构可视化核心逻辑 ***********/
+    const svg = document.getElementById('canvas');
+    const dsSelect = document.getElementById('ds-select');
+    const opSelect = document.getElementById('op-select');
+    const valueInput = document.getElementById('value-input');
+    const pseudocode = document.getElementById('pseudocode');
+    const curStructure = document.getElementById('cur-structure');
+
+    const speedSlider = document.getElementById('speed');
+    let speed = parseInt(speedSlider.value);
+    speedSlider.oninput = () => speed = parseInt(speedSlider.value);
+
+    // 播放控制
+    let playing = false;
+    let autoTimer = null;
+    document.getElementById('play').onclick = () => { playing=true; runAuto(); };
+    document.getElementById('pause').onclick = () => { playing=false; stopAuto(); };
+    document.getElementById('step').onclick = () => step(+1);
+    document.getElementById('step-back').onclick = () => step(-1);
+
+    function runAuto(){ if(autoTimer) clearInterval(autoTimer); autoTimer = setInterval(()=>step(+1), Math.max(60, speed)); }
+    function stopAuto(){ if(autoTimer) clearInterval(autoTimer); autoTimer=null; }
+
+    // 可视化状态机
+    const state = {
+      mode: 'array',
+      steps: [],  // 每一步的变更与高亮
+      stepIndex: -1,
+      ds: null,
+    };
+
+    // 基础绘图函数
+    function clearCanvas(){ while(svg.children.length>1) svg.removeChild(svg.lastChild); }
+    function createGroup(id){ const g = document.createElementNS('http://www.w3.org/2000/svg','g'); if(id) g.setAttribute('id',id); svg.appendChild(g); return g; }
+    function drawRect(x,y,w,h,opts={}){
+      const rect = document.createElementNS('http://www.w3.org/2000/svg','rect'); rect.setAttribute('x',x);rect.setAttribute('y',y);rect.setAttribute('width',w);rect.setAttribute('height',h);
+      rect.setAttribute('rx',6);rect.setAttribute('ry',6);
+      rect.setAttribute('class','node'); if(opts.highlight) rect.classList.add('highlight'); if(opts.ghost) rect.classList.add('ghost');
+      if(opts.fill) rect.setAttribute('fill',opts.fill);
+      svg.appendChild(rect); return rect;
+    }
+    function drawText(x,y,text,opts={}){
+      const t = document.createElementNS('http://www.w3.org/2000/svg','text'); t.setAttribute('x',x);t.setAttribute('y',y);t.setAttribute('class','node-text'); t.textContent=text; svg.appendChild(t); return t;
+    }
+    function drawLine(x1,y1,x2,y2,opts={}){
+      const l = document.createElementNS('http://www.w3.org/2000/svg','line'); l.setAttribute('x1',x1);l.setAttribute('y1',y1);l.setAttribute('x2',x2);l.setAttribute('y2',y2); l.setAttribute('class','pointer'); if(opts.highlight) l.classList.add('highlight'); svg.appendChild(l); return l;
+    }
+
+    /* ------------------ 数据结构实现（简化） ------------------ */
+    // 数组
+    function makeArray(initial=[10,20,30,40]){
+      return {
+        type:'array', arr:initial.slice(),
+        push(val){ this.arr.push(val); recordStep(`push ${val}`, ()=>{});},
+        pop(){ const v = this.arr.pop(); recordStep(`pop -> ${v}`, ()=>{}); return v; },
+        insertAt(idx,val){ this.arr.splice(idx,0,val); recordStep(`insert ${val} @ ${idx}`, ()=>{}); },
+        removeAt(idx){ const v=this.arr.splice(idx,1)[0]; recordStep(`remove ${v} @ ${idx}`, ()=>{}); return v; }
+      }
+    }
+
+    // 单向链表（节点：{val,next}）
+    function makeLinkedList(initial=[10,20,30]){
+      function node(v){ return {val:v,next:null}; }
+      const head = node(initial[0]); let cur=head; for(let i=1;i<initial.length;i++){ cur.next = node(initial[i]); cur = cur.next; }
+      return {
+        type:'linkedlist', head,
+        toArray(){ const out=[]; let p=this.head; while(p){ out.push(p.val); p=p.next; } return out; },
+        pushFront(v){ const n=node(v); n.next=this.head; this.head=n; recordStep(`pushFront ${v}`,()=>{}); },
+        pushBack(v){ let p=this.head; while(p.next) p=p.next; p.next=node(v); recordStep(`pushBack ${v}`,()=>{}); },
+        remove(v){ if(!this.head) return; if(this.head.val===v){ this.head=this.head.next; recordStep(`remove ${v} (head)`,()=>{}); return;} let prev=this.head,cur=this.head.next; while(cur){ if(cur.val===v){ prev.next=cur.next; recordStep(`remove ${v}`,()=>{}); return;} prev=cur;cur=cur.next;} }
+      }
+    }
+
+    // 栈（用数组）
+    function makeStack(initial=[1,2,3]){ const a=initial.slice(); return {type:'stack', arr:a, push(v){ a.push(v); recordStep(`push ${v}`,()=>{}); }, pop(){ const v=a.pop(); recordStep(`pop -> ${v}`,()=>{}); return v; }, toArray(){return a.slice();}} }
+
+    // 队列（循环队列视觉简化）
+    function makeQueue(initial=[1,2,3]){ const a=initial.slice(); return {type:'queue', arr:a, enqueue(v){ a.push(v); recordStep(`enqueue ${v}`,()=>{}); }, dequeue(){ const v=a.shift(); recordStep(`dequeue -> ${v}`,()=>{}); return v; }, toArray(){return a.slice();}} }
+
+    // 二叉树（节点 {val,left,right}）
+    function makeBinaryTree(values=[50,30,70,20,40,60,80]){
+      function insert(root,val){ if(!root) return {val,left:null,right:null}; if(val<root.val) root.left=insert(root.left,val); else root.right=insert(root.right,val); return root; }
+      let root=null; for(const v of values) root=insert(root,v);
+      return {
+        type:'tree', root,
+        insertVal(v){ root=insert(root,v); recordStep(`insert ${v}`,()=>{}); },
+        toArrayInorder(){ const out=[]; (function dfs(n){ if(!n) return; dfs(n.left); out.push(n.val); dfs(n.right); })(root); return out; },
+        bfs(){ const out=[]; const q=[root]; while(q.length){ const n=q.shift(); if(!n) continue; out.push(n.val); if(n.left) q.push(n.left); if(n.right) q.push(n.right); } return out; }
+      }
+    }
+
+    /* ------------------ 绘制不同结构 ------------------ */
+    function render(){
+      clearCanvas();
+      curStructure.textContent = state.mode === 'array' ? '数组' : state.mode === 'linkedlist' ? '链表' : state.mode === 'stack' ? '栈' : state.mode === 'queue' ? '队列' : '二叉树';
+      if(!state.ds) return;
+      if(state.mode==='array') renderArray(state.ds);
+      if(state.mode==='linkedlist') renderLinkedList(state.ds);
+      if(state.mode==='stack') renderStack(state.ds);
+      if(state.mode==='queue') renderQueue(state.ds);
+      if(state.mode==='tree') renderTree(state.ds);
+    }
+
+    function renderArray(ds){
+      const arr = ds.arr;
+      const startX = 80, y=120, w=80, h=50, gap=12;
+      for(let i=0;i<arr.length;i++){
+        const x = startX + i*(w+gap);
+        drawRect(x,y,w,h,{})
+        drawText(x+w/2,y+h/2+6,String(arr[i]));
+        drawText(x+w/2,y+h+22,`index ${i}`,{})
+      }
+      pseudocode.textContent = `操作说明（数组）\n- push: O(1) 摇尾部追加\n- pop: O(1) 弹出尾部\n- insertAt/removeAt: 平均 O(n) 需要移动元素\n\n示例伪代码：\ninsertAt(A, idx, v):\n  for i from A.length-1 downto idx: A[i+1]=A[i]\n  A[idx]=v`;
+    }
+
+    function renderLinkedList(ds){
+      // 从 head 遍历并绘制节点与箭头
+      let x=120, y=120, gapX=140;
+      let p=ds.head; let i=0; while(p){
+        const gx = x + i*gapX;
+        drawRect(gx,y,110,48,{});
+        drawText(gx+55,y+30,String(p.val));
+        drawText(gx+55,y+60,`node ${i}`)
+        if(p.next){ drawLine(gx+110,y+24,gx+140,y+24); }
+        p=p.next; i++;
+      }
+      pseudocode.textContent = `操作说明（链表）\n- pushFront: O(1) 在头部插入\n- pushBack: O(n) 若无尾指针需要遍历到尾\n- remove: O(n) 需要找到前驱\n\n示例伪代码（pushFront）：\npushFront(head, v):\n  node=new Node(v)\n  node.next=head\n  head=node`;
+    }
+
+    function renderStack(ds){
+      const arr = ds.toArray(); const baseX=520, baseY=120, w=140, h=48, gap=10;
+      for(let i=0;i<arr.length;i++){
+        const y = baseY + (arr.length-1-i)*(h+gap);
+        drawRect(baseX,y,w,h,{});
+        drawText(baseX+w/2,y+h/2+6,String(arr[i]));
+      }
+      drawText(baseX+w/2,baseY+arr.length*(h+gap)+18,`top -> index ${arr.length-1}`)
+      pseudocode.textContent = `操作说明（栈：LIFO）\n- push: O(1) 入栈\n- pop: O(1) 出栈\n\n示例伪代码：\npush(S, v): S[top+1]=v; top+=1\npop(S): v=S[top]; top-=1; return v`;
+    }
+
+    function renderQueue(ds){
+      const arr = ds.toArray(); const startX=520, y=380, w=100, h=48, gap=12;
+      for(let i=0;i<arr.length;i++){
+        const x=startX + i*(w+gap);
+        drawRect(x,y,w,h,{});
+        drawText(x+w/2,y+h/2+6,String(arr[i]));
+      }
+      if(arr.length>0){ drawText(startX, y+80, 'head'); drawText(startX + (arr.length-1)*(w+gap) + w, y+80, 'tail'); }
+      pseudocode.textContent = `操作说明（队列：FIFO）\n- enqueue: O(1) 进队列(尾部)\n- dequeue: O(1) 出队列(头部)，数组实现可能 O(n) 若使用 shift\n\n示例伪代码：\nenqueue(Q, v): Q[tail]=v; tail+=1\ndequeue(Q): v=Q[head]; head+=1; return v`;
+    }
+
+    function renderTree(ds){
+      // 简单的力导布局（递归水平居中）
+      const root = ds.root; if(!root) return;
+      const nodes=[];
+      function collect(n,depth,xRange){ if(!n) return null; const leftSize = xRange/2; const rightSize = xRange/2; const curX = xRange.center; const cur={n,depth,xRange,curX}; nodes.push(cur);
+        // build left and right ranges
+        // simplified: split range into two
+        const leftCenter = {center: xRange.center - xRange.size/4, size: xRange.size/2};
+        const rightCenter = {center: xRange.center + xRange.size/4, size: xRange.size/2};
+        collect(n.left, depth+1, leftCenter);
+        collect(n.right, depth+1, rightCenter);
+      }
+      // create initial range
+      collect(root,0,{center:600,size:1000});
+      // render nodes and edges
+      for(const item of nodes){
+        const xx = item.xRange.center; const yy = 80 + item.depth*100;
+        drawRect(xx-32,yy-22,64,44,{});
+        drawText(xx,yy+8,String(item.n.val));
+        if(item.n.left){ const childX = item.xRange.center - item.xRange.size/4; const childY = yy+100; drawLine(xx,yy+22,childX,childY-22); }
+        if(item.n.right){ const childX = item.xRange.center + item.xRange.size/4; const childY = yy+100; drawLine(xx,yy+22,childX,childY-22); }
+      }
+      pseudocode.textContent = `操作说明（二叉搜索树 BST）\n- insert: 平均 O(log n)，最差 O(n)（退化为链表）\n- inorder: O(n) 返回排序序列\n\n示例伪代码（inorder）：\n inorder(node): if node==null return; inorder(node.left); visit(node); inorder(node.right)`;
+    }
+
+    /* ------------------ 操作记录/回放（简化） ------------------ */
+    function recordStep(desc,fn){
+      // 在真实系统中我们会记录状态快照并保存高亮信息。为简洁，这里仅保存描述。
+      state.steps.push({desc});
+      // 自动推进到最新
+      state.stepIndex = state.steps.length-1;
+      updateStepDisplay();
+    }
+
+    function updateStepDisplay(){
+      // 显示当前步骤信息
+      const s = state.steps[state.stepIndex];
+      if(s) pseudocode.textContent = `步骤 ${state.stepIndex+1}/${state.steps.length}: ${s.desc}\n\n` + pseudocode.textContent;
+      render();
+    }
+
+    function step(delta){
+      if(state.steps.length===0) return;
+      state.stepIndex = Math.min(state.steps.length-1, Math.max(0, state.stepIndex + delta));
+      updateStepDisplay();
+    }
+
+    /* ------------------ UI 事件与结构初始化 ------------------ */
+    function populateOps(mode){ opSelect.innerHTML='';
+      const map = {
+        array:[['push','尾部推入'],['pop','尾部弹出'],['insertAt','指定索引插入'],['removeAt','指定索引删除'],['fill','重置示例数据'] ],
+        linkedlist:[['pushFront','头插'],['pushBack','尾插'],['remove','删除值'],['fill','重置示例'] ],
+        stack:[['push','入栈'],['pop','出栈'],['fill','重置示例'] ],
+        queue:[['enqueue','入队'],['dequeue','出队'],['fill','重置示例'] ],
+        tree:[['insert','插入值'],['inorder','中序遍历'],['bfs','广度优先遍历'],['fill','重置示例'] ],
+      };
+      for(const [v,t] of map[mode]){
+        const o = document.createElement('option'); o.value=v; o.textContent=t; opSelect.appendChild(o);
+      }
+    }
+
+    function setupMode(mode){ state.mode = mode; state.steps=[]; state.stepIndex=-1; state.ds = null; pseudocode.textContent='';
+      if(mode==='array') state.ds = makeArray([10,20,30,40]);
+      if(mode==='linkedlist') state.ds = makeLinkedList([10,20,30,40]);
+      if(mode==='stack') state.ds = makeStack([1,2,3]);
+      if(mode==='queue') state.ds = makeQueue([1,2,3]);
+      if(mode==='tree') state.ds = makeBinaryTree([50,30,70,20,40,60,80]);
+      populateOps(mode); render();
+    }
+
+    dsSelect.onchange = ()=>{ setupMode(dsSelect.value); };
+
+    // 执行选中操作
+    function runOperation(){
+      const op = opSelect.value; const v = valueInput.value.trim();
+      const ds = state.ds;
+      try{
+        if(ds.type==='array'){
+          if(op==='push'){ ds.push(Number(v) || v); }
+          if(op==='pop'){ ds.pop(); }
+          if(op==='insertAt'){ const idx = Number(prompt('索引 (0-based)：', '0')); ds.insertAt(idx, Number(v)||v); }
+          if(op==='removeAt'){ const idx = Number(prompt('索引 (0-based)：', '0')); ds.removeAt(idx); }
+          if(op==='fill'){ state.ds = makeArray([1,2,3,4,5]); }
+        }
+        if(ds.type==='linkedlist'){
+          if(op==='pushFront'){ ds.pushFront(Number(v)||v); }
+          if(op==='pushBack'){ ds.pushBack(Number(v)||v); }
+          if(op==='remove'){ ds.remove(Number(v)||v); }
+          if(op==='fill'){ state.ds = makeLinkedList([5,9,3,7]); }
+        }
+        if(ds.type==='stack'){
+          if(op==='push'){ ds.push(Number(v)||v); }
+          if(op==='pop'){ ds.pop(); }
+          if(op==='fill'){ state.ds = makeStack([10,20,30]); }
+        }
+        if(ds.type==='queue'){
+          if(op==='enqueue'){ ds.enqueue(Number(v)||v); }
+          if(op==='dequeue'){ ds.dequeue(); }
+          if(op==='fill'){ state.ds = makeQueue([11,22,33]); }
+        }
+        if(ds.type==='tree'){
+          if(op==='insert'){ state.ds.insertVal(Number(v)||v); }
+          if(op==='inorder'){ const seq = state.ds.toArrayInorder(); recordStep('inorder -> ' + seq.join(', '), ()=>{}); }
+          if(op==='bfs'){ const seq = state.ds.bfs(); recordStep('bfs -> ' + seq.join(', '), ()=>{}); }
+          if(op==='fill'){ state.ds = makeBinaryTree([50,30,70,20,40,60,80]); }
+        }
+      }catch(e){ alert('操作失败: '+e.message); }
+      render();
+    }
+
+    opSelect.onchange = () => { /* 可视化伪代码或额外提示可放在这里 */ };
+    // 双击执行当前操作
+    opSelect.ondblclick = runOperation;
+    // 回车在 value 输入框执行
+    valueInput.onkeydown = (e)=>{ if(e.key==='Enter') runOperation(); }
+
+    // 初始
+    setupMode('array');
+
+    // 快捷键
+    document.addEventListener('keydown', (e)=>{
+      if(e.key===' ') { e.preventDefault(); playing = !playing; if(playing) runAuto(); else stopAuto(); }
+      if(e.key==='ArrowRight') step(+1);
+      if(e.key==='ArrowLeft') step(-1);
+    });
+
+    // 简单的帮助提示
+    console.log('已加载数据结构教学动画。操作：选择结构 -> 选择操作 -> 双击操作或回车执行。播放/暂停 空格键。');
+  </script>
+</body>
+</html>
